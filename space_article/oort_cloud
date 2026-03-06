@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Oort Cloud: A Cosmic Frontier - Oort Cloud Report</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h1><a href="index.html">OORT CLOUD REPORT</a></h1>
+        <div id="current-date" class="date"></div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="space.html">SPACE</a></li>
+            <li><a href="robots.html">ROBOTS</a></li>
+            <li><a href="genetics.html">GENETICS</a></li>
+            <li><a href="energy.html">ENERGY</a></li>
+        </ul>
+    </nav>
+
+    <main class="single-article">
+        <div class="article-header">
+            <p class="category">Deep Space Analysis</p>
+            <h2>The Oort Cloud: Mapping the Sun’s Final Frontier</h2>
+            <p class="byline">By Staff Reporter | Science Desk</p>
+        </div>
+
+        <section class="article-content">
+            <p>The <strong>Oort Cloud</strong> remains one of the most mysterious and vast structures in our solar system, acting as a gargantuan "shell" of icy debris that encloses everything from the Sun to the Kuiper Belt. Named after Dutch astronomer Jan Oort, who hypothesized its existence in 1950, this region is located nearly 2,000 to 100,000 astronomical units (AU) from the Sun. While it has never been directly observed, its presence is inferred by the behavior of long-period comets that swing into the inner solar system.</p>
+
+            <p>Unlike the flat, disc-like shape of the Kuiper Belt, the Oort Cloud is believed to be a thick, spherical bubble. It is composed of trillions of icy objects, ranging from small pebbles to mountain-sized chunks of frozen water, methane, and ammonia. Scientists believe these objects are the "leftovers" of the early solar system, kicked out into deep space by the massive gravitational pull of gas giants like Jupiter and Saturn billions of years ago.</p>
+
+            <blockquote class="pull-quote">
+                "Voyager 1 will not reach the inner edge of the Oort Cloud for another 300 years."
+            </blockquote>
+
+            <p>This icy reservoir serves as the primary source for long-period comets, those with orbits lasting thousands or even millions of years. When a passing star or the gravitational tide of the Milky Way galaxy nudges one of these icy bodies, it can be sent tumbling toward the Sun. As these "dirty snowballs" enter the warmer inner solar system, they develop the spectacular glowing tails that have fascinated humanity for millennia.</p>
+
+            <p>Studying the Oort Cloud is a significant challenge because of its extreme distance and the dimness of its inhabitants. Even our most distant spacecraft, Voyager 1, will not reach the inner edge of the Oort Cloud for another 300 years, and it will take nearly 30,000 years to pass through to the other side. Because the cloud is so far away, it exists in a delicate balance, where the Sun’s gravity is barely stronger than the pull of neighboring stars.</p>
+
+            <p>Ultimately, the Oort Cloud represents a cosmic time capsule, preserving the pristine materials that existed when our solar system first formed. By analyzing the comets that originate from this distant realm, astronomers can piece together the chemical history of our celestial neighborhood. As we continue to advance our telescopic technology, we may one day finally catch a direct glimpse of this frontier, unlocking the final secrets of the Sun's domain.</p>
+        </section>
+        
+        <div class="back-link">
+            <a href="index.html">&larr; Back to Headlines</a>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Oort Cloud Report. All rights reserved.</p>
+    </footer>
+    <script src="js/general.js"></script>
+</body>
+</html>

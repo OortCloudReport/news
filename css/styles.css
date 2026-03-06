@@ -105,3 +105,41 @@ nav a.active {
     text-decoration: none;
     font-weight: bold;
 }
+
+/* 1. Remove the default browser gap at the top of the list */
+nav ul {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    
+    /* TIGHTEN THESE TWO LINES: */
+    padding: 10px 0;      /* Reduced from 15px/20px to 10px */
+    margin: 0 auto;       /* Removes the outer gap between header and nav */
+    
+    border-top: 1px solid #333;
+    border-bottom: 1px solid #333;
+}
+
+nav li {
+    margin: 0 20px;
+}
+
+nav a {
+    text-decoration: none; /* Removes the blue underline */
+    color: #333;           /* Professional dark grey/black */
+    font-weight: bold;
+    font-size: 0.9rem;
+    letter-spacing: 1.5px; /* Spaced out letters like a masthead */
+    transition: color 0.3s ease; /* Smooth color change */
+}
+
+/* Hover Effect */
+nav a:hover {
+    color: #8b0000;       /* Changes to dark red when you point at it */
+    text-decoration: underline; /* Optional: adds underline only on hover */
+}
+
+/* Optional: "Active" page styling */
+nav a.active {
+    border-bottom: 2px solid #8b0000;
+}

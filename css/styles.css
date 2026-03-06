@@ -53,3 +53,8 @@ footer {
     padding-top: 10px;
     font-size: 0.8rem;
 }
+
+nav a.active {
+    text-decoration: underline;
+    font-weight: bold;
+}

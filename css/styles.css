@@ -32,6 +32,12 @@ nav li { margin: 0 15px; }
 .featured {
     padding: 20px 0;
     border-bottom: 2px solid #333;
+    text-align: center;
+}
+
+.featured h2 {
+    margin: 15px auto;
+    max-width: 800px; /* Keeps the headline from stretching too wide on big screens */
 }
 
 .columns {
@@ -190,5 +196,104 @@ nav a.active {
     .pull-quote {
         font-size: 1.2rem;
         margin: 20px 0;
+    }
+}
+
+/* --- Global Article Image Styling --- */
+
+/* Optional: Add a caption style if you want to add text under images later */
+.article-content figcaption {
+    text-align: center;
+    font-family: 'Georgia', serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: -1.5rem; /* Pulls caption closer to the image */
+    margin-bottom: 2rem;
+}
+
+.hero-image {
+    margin-top: 0;
+    margin-bottom: 2rem;
+}
+
+.hero-image img {
+    border-bottom: 3px solid #333; /* Adds a "heavy" news line under the main photo */
+}
+
+/* --- Global Article Image Styling --- */
+
+/* This targets BOTH the hero image and images inside the article content */
+.article-content img, 
+.hero-image img {
+    max-width: 100%;     /* Critical for mobile */
+    width: 550px;        /* Changed to 550px to make it look more like a standard news photo */
+    height: auto;
+    display: block;
+    margin: 0 auto;      /* Centers it */
+    
+    /* Aesthetics */
+    border: 1px solid #ddd; 
+    padding: 5px;
+    background-color: #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* Specific spacing for the Hero Image at the top */
+.hero-image {
+    margin-top: 0;
+    margin-bottom: 2rem;
+    text-align: center; /* Ensures the caption centers too */
+}
+
+/* Specific border for the hero photo */
+.hero-image img {
+    border-bottom: 3px solid #333; 
+}
+
+.article-content figcaption {
+    text-align: center;
+    font-family: 'Georgia', serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0.5rem; /* Space between photo and text */
+    margin-bottom: 2rem;
+}
+
+/* Mobile Tweak: On phones, let it take up the full available width */
+@media (max-width: 768px) {
+    .article-content img, 
+    .hero-image img {
+        width: 100%;     /* Full width on small screens */
+        max-width: 100%;
+        padding: 2px;
+    }
+}
+
+/* Styling for images on the index/category pages */
+.index-thumb {
+    width: 100%;            /* Allows it to be responsive */
+    max-width: 600px;       /* Increased slightly for a better desktop "Hero" feel */
+    height: auto;           /* Maintains the original aspect ratio */
+    
+    /* THE CENTERING MAGIC */
+    display: block;         
+    margin: 20px auto;      /* "auto" on left/right centers the block */
+    
+    border: 1px solid #333;
+    transition: transform 0.3s ease; /* Adds a nice zoom effect on hover */
+}
+
+/* Hover Effect for the index page */
+.index-thumb:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+@media (max-width: 768px) {
+    .index-thumb {
+        max-width: 100%;    /* Takes up full width on mobile */
+        margin: 15px auto;
     }
 }

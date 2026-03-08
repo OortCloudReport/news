@@ -297,3 +297,77 @@ nav a.active {
         margin: 15px auto;
     }
 }
+
+/* --- Prettier Technical Table --- */
+
+.technical-summary {
+    margin: 40px 0;
+    padding: 30px;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px; /* Softer corners for "normal people" */
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.technical-summary h3 {
+    text-align: center;
+    color: #1a1a1a;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    margin-bottom: 25px;
+}
+
+.pipeline-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Georgia', serif; /* Keeps it matching your newspaper */
+}
+
+.pipeline-table th {
+    background-color: #f8f9fa;
+    color: #666;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    padding: 15px;
+    border-bottom: 2px solid #333;
+    text-align: left;
+}
+
+.pipeline-table td {
+    padding: 20px 15px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.95rem;
+    color: #444;
+}
+
+/* Status Tags - Making the technical stuff visual */
+.status-tag {
+    font-family: Arial, sans-serif;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.status-tag.final { background-color: #e3f2fd; color: #1976d2; } /* Blue */
+.status-tag.ongoing { background-color: #fff3e0; color: #e65100; } /* Orange */
+.status-tag.breakthrough { background-color: #f3e5f5; color: #7b1fa2; } /* Purple */
+
+.table-note {
+    font-size: 0.8rem;
+    font-style: italic;
+    color: #888;
+    margin-top: 15px;
+    text-align: center;
+}
+
+/* Mobile responsive fixes */
+@media (max-width: 768px) {
+    .table-container { overflow-x: auto; }
+    .pipeline-table { min-width: 500px; }
+    .technical-summary { padding: 15px; }
+}

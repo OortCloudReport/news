@@ -299,15 +299,23 @@
     }
 
     function finish() {
-        const pMaj = picks.filter(c => c.color === bColor).length;
-        const cMaj = cpuDeck.filter(c => c.color === bColor).length;
-        let finalP = pPts; let finalC = cPts;
-        if(pMaj > cMaj) finalP += 15; else if (cMaj > pMaj) finalC += 15;
-        
-        document.getElementById('game-overlay').style.display = "flex";
-        document.getElementById('otitle').innerText = finalP > finalC ? "VICTORY" : "DEFEAT";
-        document.getElementById('obody').innerText = `Score: ${pPts} (You) vs ${cPts} (CPU)\nBonus: ${bColor.toUpperCase()} (${pMaj} vs ${cMaj})\n\nFINAL TOTAL: ${finalP} - ${finalC}`;
-    }
+    const pMaj = picks.filter(c => c.color === bColor).length;
+    const cMaj = cpuDeck.filter(c => c.color === bColor).length;
+    
+    let finalP = pPts; 
+    let finalC = cPts;
+
+    // Award the +15 Bonus
+    if (pMaj > cMaj) finalP += 15; 
+    else if (cMaj > pMaj) finalC += 15;
+    
+    document.getElementById('game-overlay').style.display = "flex";
+    
+    // CHANGE THIS LINE: Compare finalP vs finalC
+    document.getElementById('otitle').innerText = finalP > finalC ? "VICTORY" : "DEFEAT";
+    
+    document.getElementById('obody').innerText = `Score: ${pPts} (You) vs ${cPts} (CPU)\nBonus: ${bColor.toUpperCase()} (${pMaj} vs ${cMaj})\n\nFINAL TOTAL: ${finalP} - ${finalC}`;
+}
 
     updateUI();
 </script>

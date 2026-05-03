@@ -20,40 +20,36 @@
             margin: 0; text-align: center; overflow: hidden; display: flex; flex-direction: column; height: 100vh;
         }
 
-        /* Navigation */
         .nav { display: flex; justify-content: space-around; background: #000; padding: 15px; border-bottom: 2px solid var(--p); }
         .nav a { color: white; text-decoration: none; font-weight: bold; font-size: 0.9rem; opacity: 0.7; }
         .nav a.active { color: var(--s); opacity: 1; }
 
-        /* Toast UI */
         #toast {
             position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
             background: rgba(15, 23, 42, 0.95); border: 1px solid var(--p);
-            padding: 12px 24px; border-radius: 50px; font-size: 0.9rem; font-weight: bold;
+            padding: 12px 24px; border-radius: 50px; font-size: 0.85rem; font-weight: bold;
             z-index: 1000; display: none; white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        /* Scanner Core */
         .scanner-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; }
         
         #scan-btn { 
             width: 220px; height: 220px; border-radius: 50%; border: 10px solid #222;
             background: rgba(255,255,255,0.03); color: #444; font-size: 1.1rem; font-weight: 900; 
-            cursor: pointer; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            cursor: pointer; transition: all 0.4s ease; 
             display: flex; align-items: center; justify-content: center; text-align: center;
             line-height: 1.3; white-space: pre-line;
         }
 
         #scan-btn.active-zone { 
             border-color: var(--s); color: white; background: rgba(245, 158, 11, 0.1);
-            box-shadow: 0 0 50px rgba(245, 158, 11, 0.3);
+            box-shadow: 0 0 50px rgba(245, 158, 11, 0.4);
             transform: scale(1.05);
         }
 
-        #status { font-size: 1.1rem; padding: 0 30px; line-height: 1.5; color: #94a3b8; min-height: 3em; }
+        #status { font-size: 1rem; padding: 0 40px; line-height: 1.5; color: #94a3b8; min-height: 3em; }
         #status strong { color: white; }
 
-        /* Reveal Overlay */
         .card-reveal { 
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); 
             z-index: 1100; flex-direction: column; align-items: center; justify-content: center; 
@@ -64,10 +60,8 @@
             width: 140px; height: 140px; border-radius: 50%; border: 5px solid #fff;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             font-weight: 900; font-size: 2.2rem; margin-bottom: 25px;
-            box-shadow: 0 0 50px rgba(255,255,255,0.2);
         }
 
-        /* Coin Elements */
         .red { background: var(--red); } .blue { background: var(--blue); } .green { background: var(--green); }
         .yellow { background: var(--yellow); color: black; } .purple { background: var(--purple); }
         .orange { background: var(--orange); } .pink { background: var(--pink); }
@@ -103,6 +97,7 @@
 <script>
     const COLORS = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "silver", "gold"];
     let currentNearbyRide = null;
+    let userCoords = { lat: 0, lng: 0 };
 
     function showToast(msg, color = "var(--p)") {
         const t = document.getElementById('toast');
@@ -112,9 +107,8 @@
         setTimeout(() => { t.style.display = 'none'; }, 3000);
     }
 
-    // Distance calculation in feet
     function getDistanceFeet(lat1, lon1, lat2, lon2) {
-        const R = 20902231; // Earth radius in feet
+        const R = 20902231; // Feet
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -130,33 +124,37 @@
     }
 
     window.onload = () => {
-        // We use REAL geolocation now. No fakeGPS loop.
         if (navigator.geolocation) {
-            console.log("--- SCANNER INITIALIZED ---");
             navigator.geolocation.watchPosition(pos => {
-                const { latitude, longitude, accuracy } = pos.coords;
-                console.log(`[GEO] Lat: ${latitude}, Lng: ${longitude} | Acc: ${accuracy}m`);
-                updateUI(latitude, longitude);
+                userCoords.lat = pos.coords.latitude;
+                userCoords.lng = pos.coords.longitude;
+                updateUI();
             }, (err) => {
-                document.getElementById('status').innerText = "Location Access Required: " + err.message;
+                document.getElementById('status').innerText = "Location Error: " + err.message;
             }, { 
                 enableHighAccuracy: true,
                 maximumAge: 0 
             });
-        } else {
-            document.getElementById('status').innerText = "Device not supported.";
         }
+
+        // TAB SYNC: This triggers if you hit "PIN" in the Admin tab
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'gToonRides') {
+                console.log("Map Updated in Admin. Re-calculating zones...");
+                updateUI();
+            }
+        });
     };
 
-    function updateUI(uLat, uLng) {
-        // Get the custom ride locations pinned in Admin
-        const rides = JSON.parse(localStorage.getItem('gToonRides') || '[]');
+    function updateUI() {
+        // Fallback to RIDE_COORDINATES from data.js if storage is empty
+        const rides = JSON.parse(localStorage.getItem('gToonRides') || JSON.stringify(RIDE_COORDINATES));
         let found = null;
         
         rides.forEach(ride => {
-            const feetAway = getDistanceFeet(uLat, uLng, ride.lat, ride.lng);
-            // 40 feet detection radius for precision
-            if (feetAway <= 40) found = ride;
+            const feetAway = getDistanceFeet(userCoords.lat, userCoords.lng, ride.lat, ride.lng);
+            // Detect if within 50 feet
+            if (feetAway <= 50) found = ride;
         });
 
         const btn = document.getElementById('scan-btn');
@@ -176,20 +174,18 @@
     }
 
     function handleScanClick() {
-        if (!currentNearbyRide) return showToast("⚠️ Walk to a ride zone first!", "#ef4444");
+        if (!currentNearbyRide) return showToast("⚠️ Walk closer to a zone!", "#ef4444");
         
         let cooldowns = JSON.parse(localStorage.getItem('gToonCooldowns') || '{}');
         if (isSameDay(cooldowns[currentNearbyRide.id])) {
-            return showToast(`🚫 Area depleted! Come back tomorrow.`, "#f97316");
+            return showToast(`🚫 Area depleted! Try again tomorrow.`, "#f97316");
         }
 
         let inventory = JSON.parse(localStorage.getItem('gToonCollection') || '[]');
-        
-        // RIDE_SETS is loaded from data.js
         const pool = RIDE_SETS[currentNearbyRide.id] || [currentNearbyRide.main];
         const missing = pool.filter(n => !inventory.some(c => c.char === n));
 
-        if (missing.length === 0) return showToast("✅ All coins collected for this ride!", "var(--s)");
+        if (missing.length === 0) return showToast("✅ All coins collected here!", "var(--s)");
 
         const coin = { 
             char: missing[Math.floor(Math.random() * missing.length)], 

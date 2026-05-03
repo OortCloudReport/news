@@ -4,36 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gToons Admin Console</title>
+    
     <script src="data.js"></script>
+
     <style>
         :root { 
             --p: #3b82f6; --s: #f59e0b; --bg: #0f172a; 
             --card: #1e293b; --text: #f1f5f9; --green: #10b981;
         }
+        
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; padding-bottom: 80px; }
         .container { max-width: 1100px; margin: auto; display: grid; grid-template-columns: 1fr; gap: 20px; }
         @media (min-width: 850px) { .container { grid-template-columns: 1.2fr 0.8fr; } }
+        
         .panel { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid #334155; height: fit-content; }
         h2 { color: var(--s); font-size: 1rem; text-transform: uppercase; margin-top: 0; border-bottom: 1px solid #334155; padding-bottom: 10px; letter-spacing: 1px; }
+        
         label { display: block; font-size: 0.75rem; color: #94a3b8; margin: 10px 0 4px 0; }
         input, select { width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 8px; box-sizing: border-box; font-size: 0.9rem; }
+        
         .btn { padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; transition: 0.2s; font-size: 0.85rem; }
         .btn:hover { opacity: 0.8; transform: translateY(-1px); }
         .btn-p { background: var(--p); color: white; }
         .btn-danger { background: #7f1d1d; color: #fecaca; }
-        .btn-pin { background: #064e3b; color: #a7f3d0; margin-top: 8px; border: 1px solid #059669; }
+        .btn-warp { background: #064e3b; color: #a7f3d0; margin-top: 8px; }
 
+        /* The New Toast Notification */
         #toast {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             background: var(--green); color: white; padding: 12px 25px; border-radius: 50px;
             font-weight: bold; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             display: none; z-index: 10000; animation: slideUp 0.3s ease-out;
         }
+
         @keyframes slideUp { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
 
         .ride-card { background: #0f172a; padding: 15px; border-radius: 12px; margin-top: 10px; border: 1px solid #334155; }
         .inv-scroll { max-height: 400px; overflow-y: auto; background: #0f172a; border-radius: 8px; padding: 10px; margin-top: 10px; border: 1px solid #334155; }
+        
         .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        /* Element Colors */
         .red { background: #ef4444; } .blue { background: #3b82f6; } .green { background: #22c55e; } 
         .yellow { background: #eab308; } .purple { background: #a855f7; } .orange { background: #f97316; } 
         .pink { background: #ec4899; } .cyan { background: #06b6d4; } .silver { background: #94a3b8; } .gold { background: #d97706; }
@@ -45,28 +55,30 @@
 
 <div class="container">
     <div class="panel">
-        <h2>📍 Ride Mapping (Set Coordinates)</h2>
-        <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 15px;">Stand at a real-world location and click "PIN TO HERE" to move that ride to your current spot.</p>
+        <h2>📍 Ride Geofencing & Warp</h2>
         <div id="ride-list"></div>
-        <button class="btn btn-danger" style="margin-top:20px;" onclick="resetRides()">Restore Disneyland Defaults</button>
+        <button class="btn btn-danger" style="margin-top:20px;" onclick="resetRides()">Restore Factory Defaults</button>
     </div>
 
     <div class="panel">
         <h2>🪙 Custom Mint</h2>
         <label>Set Theme</label>
         <select id="c-ride"></select>
+        
         <label>Coin Name</label>
         <input type="text" id="c-name" placeholder="e.g. Golden Mickey">
+        
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
             <div><label>Power (1-15)</label><input type="number" id="c-pow" value="10"></div>
             <div><label>Element Color</label><select id="c-color"></select></div>
         </div>
         <button class="btn btn-p" onclick="mint()">Add Directly to Deck</button>
 
-        <h2 style="margin-top:40px;">🎒 Inventory Tools</h2>
+        <h2 style="margin-top:40px;">🎒 Collection Management</h2>
         <div id="inv-list" class="inv-scroll"></div>
+        
         <button class="btn" style="background:#4338ca; color:white; margin-top:20px;" onclick="clearLimits()">Reset Daily Scan Limits</button>
-        <button class="btn btn-danger" onclick="wipe()">Wipe All Data</button>
+        <button class="btn btn-danger" onclick="wipe()">Wipe All Local Storage</button>
         <button class="btn" style="background:#334155; color:white;" onclick="window.location.href='collect.html'">Open Scanner</button>
     </div>
 </div>
@@ -92,63 +104,82 @@
 
     function render() {
         const rides = JSON.parse(localStorage.getItem('gToonRides'));
+        
+        // Ride List
         document.getElementById('ride-list').innerHTML = rides.map((r, i) => `
             <div class="ride-card">
                 <strong>${r.main}</strong>
                 <div style="display:flex; gap:10px; margin-top:10px;">
-                    <div style="flex:1"><label>LAT</label><input type="number" step="0.00001" value="${r.lat}" id="lat-${i}" onchange="manualUpd(${i})"></div>
-                    <div style="flex:1"><label>LNG</label><input type="number" step="0.00001" value="${r.lng}" id="lng-${i}" onchange="manualUpd(${i})"></div>
+                    <div style="flex:1"><label>LAT</label><input type="number" step="0.00001" value="${r.lat}" id="lat-${i}" onchange="updR(${i})"></div>
+                    <div style="flex:1"><label>LNG</label><input type="number" step="0.00001" value="${r.lng}" id="lng-${i}" onchange="updR(${i})"></div>
                 </div>
-                <button class="btn btn-pin" onclick="pinToCurrent(${i}, '${r.main}')">📍 PIN ${r.main.toUpperCase()} TO MY SPOT</button>
+                <button class="btn btn-warp" onclick="warp(${r.lat}, ${r.lng}, '${r.main}')">WARP TO ${r.main.toUpperCase()}</button>
             </div>`).join('');
+
         document.getElementById('c-ride').innerHTML = rides.map(r => `<option value="${r.id}">${r.main}</option>`).join('');
+
+        // Inventory
         const inv = JSON.parse(localStorage.getItem('gToonCollection') || '[]');
         document.getElementById('inv-list').innerHTML = inv.length ? inv.map((c, i) => `
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.85rem; border-bottom:1px solid #1e293b; padding-bottom:4px; align-items:center;">
                 <span><span class="dot ${c.color}"></span><strong>${c.power}</strong> ${c.char}</span>
-                <button onclick="del(${i})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:bold;">DEL</button>
-            </div>`).join('') : '<p style="text-align:center; color:#475569;">Deck Empty</p>';
+                <button onclick="del(${i})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:bold; padding:5px;">DELETE</button>
+            </div>`).join('') : '<p style="text-align:center; color:#475569;">No coins in deck.</p>';
     }
 
-    function manualUpd(index) {
+    function updR(index) {
         let rides = JSON.parse(localStorage.getItem('gToonRides'));
         rides[index].lat = parseFloat(document.getElementById(`lat-${index}`).value);
         rides[index].lng = parseFloat(document.getElementById(`lng-${index}`).value);
         localStorage.setItem('gToonRides', JSON.stringify(rides));
-        notify("Manual Update Saved!");
+        notify("Coordinates Saved!");
     }
 
-    function pinToCurrent(index, name) {
-        if (!navigator.geolocation) return notify("GPS Not Supported");
-        notify("Getting GPS Fix...");
-        navigator.geolocation.getCurrentPosition((pos) => {
-            let rides = JSON.parse(localStorage.getItem('gToonRides'));
-            rides[index].lat = pos.coords.latitude;
-            rides[index].lng = pos.coords.longitude;
-            localStorage.setItem('gToonRides', JSON.stringify(rides));
-            render();
-            notify(`✅ ${name} Pinned!`);
-        }, (err) => notify("Error: " + err.message), { enableHighAccuracy: true });
+    function warp(lat, lng, name) { 
+        localStorage.setItem('fakeGPS', JSON.stringify({lat, lng})); 
+        notify(`Warped to ${name}!`); 
     }
 
-    function clearLimits() { localStorage.removeItem('gToonCooldowns'); notify("Limits Reset!"); }
+    function clearLimits() { 
+        localStorage.removeItem('gToonCooldowns'); 
+        notify("Scan limits reset!"); 
+    }
+
     function mint() {
         const name = document.getElementById('c-name').value;
-        if(!name) return notify("Enter Name!");
+        if(!name) return notify("Enter a name first!");
+
         let i = JSON.parse(localStorage.getItem('gToonCollection') || '[]');
-        i.push({ char: name, power: parseInt(document.getElementById('c-pow').value), color: document.getElementById('c-color').value, rideId: document.getElementById('c-ride').value });
+        i.push({
+            char: name, 
+            power: parseInt(document.getElementById('c-pow').value), 
+            color: document.getElementById('c-color').value, 
+            rideId: document.getElementById('c-ride').value
+        });
         localStorage.setItem('gToonCollection', JSON.stringify(i)); 
         render(); 
-        notify("Minted!");
+        notify("Coin Minted!");
     }
+
     function del(i) { 
         let inv = JSON.parse(localStorage.getItem('gToonCollection')); 
         inv.splice(i,1); 
         localStorage.setItem('gToonCollection', JSON.stringify(inv)); 
         render(); 
+        notify("Coin Removed.");
     }
-    function resetRides() { localStorage.setItem('gToonRides', JSON.stringify(DEFAULTS)); render(); notify("Disneyland Map Restored!"); }
-    function wipe() { localStorage.clear(); location.reload(); }
+
+    function resetRides() { 
+        localStorage.setItem('gToonRides', JSON.stringify(DEFAULTS)); 
+        render(); 
+        notify("Defaults Restored!"); 
+    }
+
+    function wipe() { 
+        localStorage.clear(); 
+        location.reload(); 
+    }
+
     init();
 </script>
 </body>

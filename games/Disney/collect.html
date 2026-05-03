@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gToons - Magic Scanner</title>
+
+    <script src="data.js"></script>
+
+    <style>
+        :root { 
+            --p: #3b82f6; --s: #f59e0b; --bg: #0b0e14; 
+            --red: #ef4444; --blue: #3b82f6; --green: #22c55e;
+            --yellow: #eab308; --purple: #a855f7; --orange: #f97316;
+            --pink: #ec4899; --cyan: #06b6d4; --silver: #94a3b8; --gold: #d97706;
+        }
+
+        body { 
+            background: var(--bg); color: white; font-family: 'Segoe UI', system-ui, sans-serif; 
+            margin: 0; text-align: center; overflow: hidden; display: flex; flex-direction: column; height: 100vh;
+        }
+
+        /* Navigation */
+        .nav { display: flex; justify-content: space-around; background: #000; padding: 15px; border-bottom: 2px solid var(--p); }
+        .nav a { color: white; text-decoration: none; font-weight: bold; font-size: 0.9rem; opacity: 0.7; }
+        .nav a.active { color: var(--s); opacity: 1; }
+
+        /* Toast UI */
+        #toast {
+            position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95); border: 1px solid var(--p);
+            padding: 12px 24px; border-radius: 50px; font-size: 0.9rem; font-weight: bold;
+            z-index: 1000; display: none; white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        /* Scanner Core */
+        .scanner-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; }
+        
+        #scan-btn { 
+            width: 220px; height: 220px; border-radius: 50%; border: 10px solid #222;
+            background: rgba(255,255,255,0.03); color: #444; font-size: 1.1rem; font-weight: 900; 
+            cursor: pointer; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            display: flex; align-items: center; justify-content: center; text-align: center;
+            line-height: 1.3; white-space: pre-line;
+        }
+
+        #scan-btn.active-zone { 
+            border-color: var(--s); color: white; background: rgba(245, 158, 11, 0.1);
+            box-shadow: 0 0 50px rgba(245, 158, 11, 0.3);
+            transform: scale(1.05);
+        }
+
+        #status { font-size: 1.1rem; padding: 0 30px; line-height: 1.5; color: #94a3b8; min-height: 3em; }
+        #status strong { color: white; }
+
+        /* Reveal Overlay */
+        .card-reveal { 
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); 
+            z-index: 1100; flex-direction: column; align-items: center; justify-content: center; 
+            backdrop-filter: blur(10px);
+        }
+
+        .new-coin { 
+            width: 140px; height: 140px; border-radius: 50%; border: 5px solid #fff;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 2.2rem; margin-bottom: 25px;
+            box-shadow: 0 0 50px rgba(255,255,255,0.2);
+        }
+
+        /* Coin Elements */
+        .red { background: var(--red); } .blue { background: var(--blue); } .green { background: var(--green); }
+        .yellow { background: var(--yellow); color: black; } .purple { background: var(--purple); }
+        .orange { background: var(--orange); } .pink { background: var(--pink); }
+        .cyan { background: var(--cyan); } .silver { background: var(--silver); }
+        .gold { background: var(--gold); border-color: #facc15 !important; }
+
+        .btn-collect { padding: 15px 40px; border-radius: 30px; border: none; background: var(--p); color: white; font-weight: bold; font-size: 1rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="toast"></div>
+
+    <div class="nav">
+        <a href="deck.html">MY DECK</a>
+        <a href="collect.html" class="active">SCANNER</a>
+        <a href="battle.html">BATTLE</a>
+    </div>
+
+    <div class="scanner-container">
+        <button id="scan-btn" onclick="handleScanClick()">ACQUIRING<br>SATELLITES...</button>
+        <div id="status">Waking up Magic Sensors...</div>
+    </div>
+
+    <div id="reveal" class="card-reveal">
+        <h2 style="color:var(--s); letter-spacing: 2px;">NEW COIN FOUND!</h2>
+        <div id="coin-display" class="new-coin"></div>
+        <h3 id="coin-name" style="font-size: 1.5rem; margin-top: 0;"></h3>
+        <p id="coin-rarity" style="opacity: 0.6; margin-bottom: 30px;"></p>
+        <button class="btn-collect" onclick="closeReveal()">ADD TO DECK</button>
+    </div>
+
+<script>
+    const COLORS = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "silver", "gold"];
+    let currentNearbyRide = null;
+
+    function showToast(msg, color = "var(--p)") {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.borderColor = color;
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+
+    // Distance calculation in feet
+    function getDistanceFeet(lat1, lon1, lat2, lon2) {
+        const R = 20902231; // Earth radius in feet
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+    }
+
+    function isSameDay(ts) {
+        if (!ts) return false;
+        const d = new Date(ts), now = new Date();
+        return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }
+
+    window.onload = () => {
+        // We use REAL geolocation now. No fakeGPS loop.
+        if (navigator.geolocation) {
+            console.log("--- SCANNER INITIALIZED ---");
+            navigator.geolocation.watchPosition(pos => {
+                const { latitude, longitude, accuracy } = pos.coords;
+                console.log(`[GEO] Lat: ${latitude}, Lng: ${longitude} | Acc: ${accuracy}m`);
+                updateUI(latitude, longitude);
+            }, (err) => {
+                document.getElementById('status').innerText = "Location Access Required: " + err.message;
+            }, { 
+                enableHighAccuracy: true,
+                maximumAge: 0 
+            });
+        } else {
+            document.getElementById('status').innerText = "Device not supported.";
+        }
+    };
+
+    function updateUI(uLat, uLng) {
+        // Get the custom ride locations pinned in Admin
+        const rides = JSON.parse(localStorage.getItem('gToonRides') || '[]');
+        let found = null;
+        
+        rides.forEach(ride => {
+            const feetAway = getDistanceFeet(uLat, uLng, ride.lat, ride.lng);
+            // 40 feet detection radius for precision
+            if (feetAway <= 40) found = ride;
+        });
+
+        const btn = document.getElementById('scan-btn');
+        const status = document.getElementById('status');
+
+        if (found) {
+            currentNearbyRide = found;
+            btn.innerText = `SCAN FOR\n${found.main.toUpperCase()}`;
+            btn.classList.add('active-zone');
+            status.innerHTML = `✨ <strong>Zone Detected!</strong><br>You are at ${found.main}.`;
+        } else {
+            currentNearbyRide = null;
+            btn.innerText = "SCAN AREA";
+            btn.classList.remove('active-zone');
+            status.innerText = "Walk to your pinned locations to scan...";
+        }
+    }
+
+    function handleScanClick() {
+        if (!currentNearbyRide) return showToast("⚠️ Walk to a ride zone first!", "#ef4444");
+        
+        let cooldowns = JSON.parse(localStorage.getItem('gToonCooldowns') || '{}');
+        if (isSameDay(cooldowns[currentNearbyRide.id])) {
+            return showToast(`🚫 Area depleted! Come back tomorrow.`, "#f97316");
+        }
+
+        let inventory = JSON.parse(localStorage.getItem('gToonCollection') || '[]');
+        
+        // RIDE_SETS is loaded from data.js
+        const pool = RIDE_SETS[currentNearbyRide.id] || [currentNearbyRide.main];
+        const missing = pool.filter(n => !inventory.some(c => c.char === n));
+
+        if (missing.length === 0) return showToast("✅ All coins collected for this ride!", "var(--s)");
+
+        const coin = { 
+            char: missing[Math.floor(Math.random() * missing.length)], 
+            color: COLORS[Math.floor(Math.random() * COLORS.length)], 
+            power: Math.floor(Math.random() * 15) + 1, 
+            rideId: currentNearbyRide.id 
+        };
+
+        inventory.push(coin);
+        cooldowns[currentNearbyRide.id] = Date.now();
+        
+        localStorage.setItem('gToonCollection', JSON.stringify(inventory));
+        localStorage.setItem('gToonCooldowns', JSON.stringify(cooldowns));
+        
+        showReveal(coin);
+    }
+
+    function showReveal(c) {
+        const d = document.getElementById('coin-display');
+        d.className = `new-coin ${c.color}`;
+        d.innerText = c.power;
+        document.getElementById('coin-name').innerText = c.char;
+        document.getElementById('coin-rarity').innerText = `${c.color.toUpperCase()} ELEMENT`;
+        document.getElementById('reveal').style.display = "flex";
+    }
+
+    function closeReveal() { 
+        document.getElementById('reveal').style.display = "none"; 
+    }
+</script>
+</body>
+</html>

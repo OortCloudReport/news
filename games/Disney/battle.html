@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gToons - Professional Tactical Edition</title>
+    <style>
+        :root { --p: #4a90e2; --s: #f39c12; --blue: #2563eb; --red: #dc2626; --green: #16a34a; }
+        body { background: #0b0e14; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        .header { background: #000; padding: 15px; border-bottom: 2px solid var(--s); text-align: center; }
+        .hud { display: flex; justify-content: space-around; font-weight: bold; margin-top: 10px; font-size: 1.2rem; }
+        
+        .arena { flex: 1; display: flex; justify-content: center; align-items: center; gap: 20px; padding: 10px; flex-wrap: wrap; }
+        .circles-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 20px; }
+        .coin-slot { width: 65px; height: 65px; border-radius: 50%; border: 2px dashed #444; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
+        
+        .coin-inner { position: relative; width: 100%; height: 100%; transition: transform 2s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+        .revealed .coin-inner { transform: rotateY(180deg); }
+        .coin-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 3px solid #fff; box-shadow: inset 0 0 15px rgba(0,0,0,0.6); }
+        .coin-front { background: #222; color: var(--s); font-weight: bold; font-size: 1.2rem; }
+        .coin-back { transform: rotateY(180deg); font-size: 0.9rem; font-weight: bold; }
+        
+        .footer { background: #000; border-top: 2px solid var(--p); padding: 15px; min-height: 160px; }
+        .hand { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; min-height: 70px; justify-content: center; }
+        .hand-coin { min-width: 60px; height: 60px; border-radius: 50%; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; }
+        
+        .primary-btn { background: var(--s); color: #000; border: none; padding: 15px 40px; border-radius: 30px; font-weight: 900; font-size: 1rem; cursor: pointer; }
+        .primary-btn:disabled { background: #333 !important; color: #777 !important; cursor: not-allowed; animation: none !important; }
+        .primary-btn:not(:disabled) { animation: pulse 1s infinite; }
+        
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .red { background: var(--red); } .blue { background: var(--blue); } .green { background: var(--green); }
+        
+        #game-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
+        .btn-group { display: flex; gap: 15px; margin-top: 20px; }
+        .secondary-btn { background: #444; color: white; border: none; padding: 12px 25px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        
+        .highlight { border: 4px solid var(--s) !important; box-shadow: 0 0 15px var(--s); }
+    </style>
+</head>
+<body>
+
+<div id="game-overlay">
+    <h1 id="otitle" style="font-size: 3.5rem; margin: 0; color: var(--s);"></h1>
+    <p id="obody" style="white-space: pre-line; text-align: center; font-size: 1.2rem; margin: 20px 0; line-height: 1.6;"></p>
+    <div class="btn-group">
+        <button class="secondary-btn" onclick="hideOverlay()">SEE BOARD</button>
+        <button class="primary-btn" style="animation:none" onclick="window.location.href=window.location.href">PLAY AGAIN</button>
+    </div>
+</div>
+
+<div class="header">
+    <div style="color:var(--s); font-weight: 900; letter-spacing: 2px;">BONUS TARGET: <span id="btarget">---</span></div>
+    <div class="hud">
+        <div style="color: var(--p);">YOU: <span id="p-score">0</span></div>
+        <div id="round-txt" style="font-size: 0.9rem; opacity: 0.8; font-family: monospace;">ROUND 1: PLACE 4</div>
+        <div style="color: #666;">CPU: <span id="c-score">0</span></div>
+    </div>
+</div>
+
+<div class="arena">
+    <div class="circles-grid" id="cpu-board">
+        <div class="coin-slot" id="cs0"></div><div class="coin-slot" id="cs1"></div><div class="coin-slot" id="cs2"></div><div class="coin-slot" id="cs3"></div>
+        <div class="coin-slot" id="cs4"></div><div class="coin-slot" id="cs5"></div><div class="coin-slot" id="cs6"></div><div class="coin-slot" id="cs7"></div>
+    </div>
+    <div class="circles-grid" id="player-board">
+        <div class="coin-slot" id="ps0"></div><div class="coin-slot" id="ps1"></div><div class="coin-slot" id="ps2"></div><div class="coin-slot" id="ps3"></div>
+        <div class="coin-slot" id="ps4"></div><div class="coin-slot" id="ps5"></div><div class="coin-slot" id="ps6"></div><div class="coin-slot" id="ps7"></div>
+    </div>
+</div>
+
+<div class="footer" id="game-footer">
+    <div class="hand" id="hand"></div>
+    <center id="action-area">
+        <button id="main-btn" class="primary-btn" onclick="startReveal()">REVEAL ROUND</button>
+    </center>
+</div>
+
+<script>
+    const COLORS = ['red', 'blue', 'green'];
+    const bColor = COLORS[Math.floor(Math.random() * 3)];
+    document.getElementById('btarget').innerText = bColor.toUpperCase();
+    document.getElementById('btarget').style.color = `var(--${bColor})`;
+
+    let inv = JSON.parse(localStorage.getItem('gToonCollection') || '[]');
+    if(inv.length < 12) {
+        inv = Array.from({length: 12}, (_, i) => ({
+            char: ["🚀","👾","💎","🔥","🌊","🌲"][i%6],
+            color: COLORS[i%3], power: Math.floor(Math.random() * 10) + 10
+        }));
+    }
+
+    const cpuDeck = Array.from({length:8}, () => ({
+        char: "👾", color: COLORS[Math.floor(Math.random()*3)], power: Math.floor(Math.random()*10)+10
+    }));
+
+    let picks = [];
+    let round = 1;
+    let revealed = 0;
+    let pPts = 0; let cPts = 0;
+    
+    const placementGoals = { 1: 4, 2: 8, 3: 8 };
+    const revealGoals = { 1: 4, 2: 7, 3: 8 };
+
+    function updateUI() {
+        const goal = placementGoals[round];
+        const hDiv = document.getElementById('hand');
+        hDiv.innerHTML = "";
+        
+        inv.forEach((c, i) => {
+            const d = document.createElement('div');
+            d.className = `hand-coin ${c.color}`;
+            d.innerHTML = c.power;
+            d.onclick = () => {
+                if (round === 3) {
+                    swapSpecific(i);
+                } else if (picks.length < goal) {
+                    picks.push(inv.splice(i,1)[0]);
+                    updateUI();
+                }
+            };
+            hDiv.appendChild(d);
+        });
+
+        for(let i=0; i<8; i++) {
+            const pSlot = document.getElementById(`ps${i}`);
+            const cSlot = document.getElementById(`cs${i}`);
+            if(i >= revealed) {
+                if(picks[i]) {
+                    const isLast = (i === 7 && round === 3);
+                    pSlot.innerHTML = `<div class="coin-inner ${isLast ? 'highlight' : ''}" onclick="recall(${i})"><div class="coin-face coin-back ${picks[i].color}" style="transform:none"><span>${picks[i].power}</span></div></div>`;
+                    cSlot.innerHTML = `<div class="coin-inner"><div class="coin-face coin-front">?</div></div>`;
+                } else { pSlot.innerHTML = ""; cSlot.innerHTML = ""; }
+            }
+        }
+        
+        if (round === 3) {
+            document.getElementById('round-txt').innerText = "TAP A COIN IN HAND TO SWAP, OR KEEP CURRENT";
+            document.getElementById('action-area').innerHTML = `<button class="primary-btn" onclick="startReveal()">KEEP & REVEAL FINAL</button>`;
+        } else {
+            const btn = document.getElementById('main-btn');
+            if(btn) btn.disabled = (picks.length !== goal);
+            document.getElementById('round-txt').innerText = `ROUND ${round}: ADD ${goal - picks.length}`;
+        }
+    }
+
+    function recall(i) {
+        if(i < revealed || round === 3) return;
+        inv.push(picks.splice(i,1)[0]);
+        updateUI();
+    }
+
+    function swapSpecific(invIndex) {
+        const oldCoin = picks.pop(); // Remove current 8th coin
+        const newCoin = inv.splice(invIndex, 1)[0]; // Get the specific choice
+        picks.push(newCoin);
+        inv.push(oldCoin);
+        updateUI();
+        // Optional: show a quick toast or message that swap happened
+    }
+
+    async function startReveal() {
+        const area = document.getElementById('action-area');
+        area.innerHTML = `<button class="primary-btn" disabled>REVEALING...</button>`;
+        const goal = revealGoals[round];
+
+        for(let i = revealed; i < goal; i++) {
+            const ps = document.getElementById(`ps${i}`);
+            const cs = document.getElementById(`cs${i}`);
+            ps.innerHTML = `<div class="coin-inner"><div class="coin-face coin-front">?</div><div class="coin-face coin-back ${picks[i].color}"><span>${picks[i].power}</span></div></div>`;
+            cs.innerHTML = `<div class="coin-inner"><div class="coin-face coin-front">?</div><div class="coin-face coin-back ${cpuDeck[i].color}"><span>${cpuDeck[i].power}</span></div></div>`;
+            
+            await new Promise(r => setTimeout(r, 200));
+            ps.classList.add('revealed');
+            cs.classList.add('revealed');
+
+            await new Promise(r => setTimeout(r, 2300));
+            pPts += picks[i].power;
+            cPts += cpuDeck[i].power;
+            document.getElementById('p-score').innerText = pPts;
+            document.getElementById('c-score').innerText = cPts;
+            revealed++;
+        }
+
+        if(round < 3) {
+            round++;
+            area.innerHTML = `<button id="main-btn" class="primary-btn" onclick="startReveal()">REVEAL ROUND</button>`;
+            updateUI();
+        } else {
+            finish();
+        }
+    }
+
+    function hideOverlay() {
+        document.getElementById('game-overlay').style.display = "none";
+        document.getElementById('game-footer').innerHTML = `<center><button class="primary-btn" onclick="window.location.href=window.location.href">PLAY AGAIN</button></center>`;
+    }
+
+    function finish() {
+        const pMaj = picks.filter(c => c.color === bColor).length;
+        const cMaj = cpuDeck.filter(c => c.color === bColor).length;
+        let finalP = pPts; let finalC = cPts;
+        
+        if(pMaj > cMaj) finalP += 15;
+        else if (cMaj > pMaj) finalC += 15;
+        
+        document.getElementById('game-overlay').style.display = "flex";
+        document.getElementById('otitle').innerText = finalP > finalC ? "VICTORY" : "DEFEAT";
+        document.getElementById('obody').innerText = `Score: ${pPts} (You) vs ${cPts} (CPU)\nBonus: ${bColor.toUpperCase()} (${pMaj} vs ${cMaj})\n\nFINAL TOTAL: ${finalP} - ${finalC}`;
+    }
+
+    updateUI();
+</script>
+</body>
+</html>

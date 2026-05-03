@@ -134,7 +134,7 @@
     document.getElementById('btarget').style.color = `var(--${bColor})`;
 
     const cpuDeck = Array.from({length:8}, () => ({
-        char: "CPU G-UNIT", color: ALL_COLORS[Math.floor(Math.random()*ALL_COLORS.length)], power: Math.floor(Math.random()*10)+10
+        char: "CPU G-UNIT", color: ALL_COLORS[Math.floor(Math.random()*ALL_COLORS.length)], power: Math.floor(Math.random() * 15) + 1
     }));
 
     let picks = [];

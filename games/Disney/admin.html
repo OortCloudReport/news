@@ -28,6 +28,7 @@
         .btn-p { background: var(--p); color: white; }
         .btn-danger { background: #7f1d1d; color: #fecaca; }
         .btn-warp { background: #064e3b; color: #a7f3d0; margin-top: 8px; }
+        .btn-active-warp { background: var(--s); color: black; }
 
         /* The New Toast Notification */
         #toast {
@@ -39,7 +40,9 @@
 
         @keyframes slideUp { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
 
-        .ride-card { background: #0f172a; padding: 15px; border-radius: 12px; margin-top: 10px; border: 1px solid #334155; }
+        .ride-card { background: #0f172a; padding: 15px; border-radius: 12px; margin-top: 10px; border: 1px solid #334155; position: relative; }
+        .ride-card.warped { border-color: var(--s); background: rgba(245, 158, 11, 0.05); }
+        
         .inv-scroll { max-height: 400px; overflow-y: auto; background: #0f172a; border-radius: 8px; padding: 10px; margin-top: 10px; border: 1px solid #334155; }
         
         .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
@@ -56,6 +59,7 @@
 <div class="container">
     <div class="panel">
         <h2>📍 Ride Geofencing & Warp</h2>
+        <button class="btn" style="background:#334155; color:white; margin-bottom:10px;" onclick="clearWarp()">❌ Clear Active Warp</button>
         <div id="ride-list"></div>
         <button class="btn btn-danger" style="margin-top:20px;" onclick="resetRides()">Restore Factory Defaults</button>
     </div>
@@ -100,21 +104,32 @@
         }
         document.getElementById('c-color').innerHTML = COLORS.map(c => `<option value="${c}">${c.toUpperCase()}</option>`).join('');
         render();
+        
+        // Listen for changes from the Scanner tab
+        window.addEventListener('storage', render);
     }
 
     function render() {
         const rides = JSON.parse(localStorage.getItem('gToonRides'));
+        const currentWarp = localStorage.getItem('warpedRide');
         
         // Ride List
-        document.getElementById('ride-list').innerHTML = rides.map((r, i) => `
-            <div class="ride-card">
-                <strong>${r.main}</strong>
+        document.getElementById('ride-list').innerHTML = rides.map((r, i) => {
+            const isWarped = currentWarp === r.id;
+            // We escape the name so apostrophes like "Peter Pan's" don't break the onclick
+            const escapedName = r.main.replace(/'/g, "\\'"); 
+            
+            return `
+            <div class="ride-card ${isWarped ? 'warped' : ''}">
+                <strong>${r.main}</strong> ${isWarped ? '<span style="color:var(--s); font-size:0.7rem; margin-left:10px;">★ ACTIVE</span>' : ''}
                 <div style="display:flex; gap:10px; margin-top:10px;">
                     <div style="flex:1"><label>LAT</label><input type="number" step="0.00001" value="${r.lat}" id="lat-${i}" onchange="updR(${i})"></div>
                     <div style="flex:1"><label>LNG</label><input type="number" step="0.00001" value="${r.lng}" id="lng-${i}" onchange="updR(${i})"></div>
                 </div>
-                <button class="btn btn-warp" onclick="warp(${r.lat}, ${r.lng}, '${r.main}')">WARP TO ${r.main.toUpperCase()}</button>
-            </div>`).join('');
+                <button class="btn ${isWarped ? 'btn-active-warp' : 'btn-warp'}" onclick="warp('${r.id}', '${escapedName}')">
+                    ${isWarped ? 'CURRENTLY WARPED' : 'WARP TO ' + r.main.toUpperCase()}
+                </button>
+            </div>`}).join('');
 
         document.getElementById('c-ride').innerHTML = rides.map(r => `<option value="${r.id}">${r.main}</option>`).join('');
 
@@ -135,9 +150,18 @@
         notify("Coordinates Saved!");
     }
 
-    function warp(lat, lng, name) { 
-        localStorage.setItem('fakeGPS', JSON.stringify({lat, lng})); 
+    // UPDATED WARP LOGIC: Uses the ID-based warp we added to collect.html
+    function warp(rideId, name) { 
+        localStorage.removeItem('warpedRide'); // Clear old warp first
+        localStorage.setItem('warpedRide', rideId); 
+        render();
         notify(`Warped to ${name}!`); 
+    }
+
+    function clearWarp() {
+        localStorage.removeItem('warpedRide');
+        render();
+        notify("Warp Cleared. Real GPS Active.");
     }
 
     function clearLimits() { 

@@ -98,6 +98,7 @@
     const COLORS = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "silver", "gold"];
     let currentNearbyRide = null;
     let userCoords = { lat: 0, lng: 0 };
+    let gpsWatchId = null;
 
     function showToast(msg, color = "var(--p)") {
         const t = document.getElementById('toast');
@@ -124,38 +125,55 @@
     }
 
     window.onload = () => {
+        // Start the single continuous watch to prevent repetitive popups
         if (navigator.geolocation) {
-            navigator.geolocation.watchPosition(pos => {
+            gpsWatchId = navigator.geolocation.watchPosition(pos => {
                 userCoords.lat = pos.coords.latitude;
                 userCoords.lng = pos.coords.longitude;
                 updateUI();
             }, (err) => {
-                document.getElementById('status').innerText = "Location Error: " + err.message;
+                // If a warp is active, we don't care about GPS errors
+                if(!localStorage.getItem('warpedRide')) {
+                    document.getElementById('status').innerText = "Location Error: " + err.message;
+                }
             }, { 
                 enableHighAccuracy: true,
+                timeout: 15000,
                 maximumAge: 0 
             });
         }
 
-        // TAB SYNC: This triggers if you hit "PIN" in the Admin tab
+        // TAB SYNC: Check for changes in Admin
         window.addEventListener('storage', (e) => {
-            if (e.key === 'gToonRides') {
-                console.log("Map Updated in Admin. Re-calculating zones...");
+            if (e.key === 'gToonRides' || e.key === 'warpedRide') {
                 updateUI();
             }
         });
+
+        // Initial UI check
+        updateUI();
     };
 
     function updateUI() {
-        // Fallback to RIDE_COORDINATES from data.js if storage is empty
         const rides = JSON.parse(localStorage.getItem('gToonRides') || JSON.stringify(RIDE_COORDINATES));
+        const warpId = localStorage.getItem('warpedRide');
         let found = null;
         
-        rides.forEach(ride => {
-            const feetAway = getDistanceFeet(userCoords.lat, userCoords.lng, ride.lat, ride.lng);
-            // Detect if within 50 feet
-            if (feetAway <= 50) found = ride;
-        });
+        // --- THE WARP LOGIC ---
+        if (warpId) {
+            found = rides.find(r => r.id === warpId);
+            if (found) {
+                console.log("Admin Warp Active for: " + found.main);
+            }
+        }
+
+        // --- PHYSICAL GPS LOGIC (Only if no warp active) ---
+        if (!found) {
+            rides.forEach(ride => {
+                const feetAway = getDistanceFeet(userCoords.lat, userCoords.lng, ride.lat, ride.lng);
+                if (feetAway <= 50) found = ride;
+            });
+        }
 
         const btn = document.getElementById('scan-btn');
         const status = document.getElementById('status');
@@ -164,7 +182,9 @@
             currentNearbyRide = found;
             btn.innerText = `SCAN FOR\n${found.main.toUpperCase()}`;
             btn.classList.add('active-zone');
-            status.innerHTML = `✨ <strong>Zone Detected!</strong><br>You are at ${found.main}.`;
+            status.innerHTML = warpId 
+                ? `🚀 <strong>Warp Active!</strong><br>Scanning ${found.main}.`
+                : `✨ <strong>Zone Detected!</strong><br>You are at ${found.main}.`;
         } else {
             currentNearbyRide = null;
             btn.innerText = "SCAN AREA";

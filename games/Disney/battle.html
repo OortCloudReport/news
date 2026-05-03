@@ -3,58 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>gToons - Professional Tactical Edition</title>
+    <title>gToons - Tactical Battle</title>
     <style>
-        :root { --p: #4a90e2; --s: #f39c12; --blue: #2563eb; --red: #dc2626; --green: #16a34a; }
-        body { background: #0b0e14; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        :root { 
+            --p: #3b82f6; --s: #f59e0b; --bg: #0b0e14; 
+            --red: #ef4444; --blue: #3b82f6; --green: #22c55e;
+            --yellow: #eab308; --purple: #a855f7; --orange: #f97316;
+            --pink: #ec4899; --cyan: #06b6d4; --silver: #94a3b8; --gold: #d97706;
+        }
         
-        .header { background: #000; padding: 15px; border-bottom: 2px solid var(--s); text-align: center; }
-        .hud { display: flex; justify-content: space-around; font-weight: bold; margin-top: 10px; font-size: 1.2rem; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        .nav { display: flex; justify-content: space-around; background: #000; padding: 12px; border-bottom: 2px solid var(--p); z-index: 100; }
+        .nav a { color: white; text-decoration: none; font-weight: bold; font-size: 0.8rem; opacity: 0.7; }
+        .nav a.active { color: var(--s); opacity: 1; }
+
+        .header { background: #000; padding: 10px; border-bottom: 1px solid #222; text-align: center; }
+        .hud { display: flex; justify-content: space-around; font-weight: bold; margin-top: 5px; font-size: 1.1rem; }
         
         .arena { flex: 1; display: flex; justify-content: center; align-items: center; gap: 20px; padding: 10px; flex-wrap: wrap; }
-        .circles-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 20px; }
-        .coin-slot { width: 65px; height: 65px; border-radius: 50%; border: 2px dashed #444; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
+        .circles-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .coin-slot { width: 75px; height: 75px; border-radius: 50%; border: 2px dashed #334155; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
         
-        .coin-inner { position: relative; width: 100%; height: 100%; transition: transform 2s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+        .coin-inner { position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
         .revealed .coin-inner { transform: rotateY(180deg); }
-        .coin-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 3px solid #fff; box-shadow: inset 0 0 15px rgba(0,0,0,0.6); }
-        .coin-front { background: #222; color: var(--s); font-weight: bold; font-size: 1.2rem; }
-        .coin-back { transform: rotateY(180deg); font-size: 0.9rem; font-weight: bold; }
         
+        .coin-face { 
+            position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 50%; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            border: 4px solid rgba(255,255,255,0.2); box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 0 15px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .coin-face::after {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg); pointer-events: none;
+        }
+
+        .coin-front { background: radial-gradient(circle, #222, #000); color: var(--s); font-weight: 900; font-size: 1.5rem; }
+        .coin-back { transform: rotateY(180deg); }
+        
+        .c-pow { font-size: 1.6rem; font-weight: 900; z-index: 2; line-height: 1; }
+        .c-name { font-size: 0.5rem; font-weight: 800; text-transform: uppercase; z-index: 2; max-width: 85%; overflow: hidden; white-space: nowrap; }
+        .c-tag { position: absolute; top: 12%; font-size: 0.45rem; font-weight: bold; opacity: 0.8; z-index: 2; letter-spacing: 1px; }
+
+        /* Element Backgrounds */
+        .red { background: radial-gradient(circle, #ef4444, #7f1d1d); }
+        .blue { background: radial-gradient(circle, #3b82f6, #1e3a8a); }
+        .green { background: radial-gradient(circle, #22c55e, #14532d); }
+        .yellow { background: radial-gradient(circle, #eab308, #854d0e); color: #000; }
+        .purple { background: radial-gradient(circle, #a855f7, #581c87); }
+        .orange { background: radial-gradient(circle, #f97316, #7c2d12); }
+        .pink { background: radial-gradient(circle, #ec4899, #831843); }
+        .cyan { background: radial-gradient(circle, #06b6d4, #164e63); }
+        .silver { background: radial-gradient(circle, #94a3b8, #334155); color: #fff; }
+        .gold { background: radial-gradient(circle, #d97706, #78350f); border-color: #facc15 !important; }
+
         .footer { background: #000; border-top: 2px solid var(--p); padding: 15px; min-height: 160px; }
-        .hand { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; min-height: 70px; justify-content: center; }
-        .hand-coin { min-width: 60px; height: 60px; border-radius: 50%; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; }
+        .hand { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; min-height: 70px; justify-content: center; flex-wrap: wrap; }
+        .hand-coin { min-width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-weight: 900; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.4); font-size: 0.8rem; }
         
-        .primary-btn { background: var(--s); color: #000; border: none; padding: 15px 40px; border-radius: 30px; font-weight: 900; font-size: 1rem; cursor: pointer; }
-        .primary-btn:disabled { background: #333 !important; color: #777 !important; cursor: not-allowed; animation: none !important; }
-        .primary-btn:not(:disabled) { animation: pulse 1s infinite; }
+        .primary-btn { background: var(--s); color: #000; border: none; padding: 12px 35px; border-radius: 30px; font-weight: 900; font-size: 0.9rem; cursor: pointer; }
+        .primary-btn:disabled { background: #333 !important; color: #777 !important; cursor: not-allowed; }
         
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        .red { background: var(--red); } .blue { background: var(--blue); } .green { background: var(--green); }
-        
-        #game-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
-        .btn-group { display: flex; gap: 15px; margin-top: 20px; }
-        .secondary-btn { background: #444; color: white; border: none; padding: 12px 25px; border-radius: 20px; cursor: pointer; font-weight: bold; }
-        
-        .highlight { border: 4px solid var(--s) !important; box-shadow: 0 0 15px var(--s); }
+        #game-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        .btn-group { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; justify-content: center; max-width: 90%; }
+        .secondary-btn { background: #4338ca; color: white; border: none; padding: 12px 25px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .highlight-silver { border: 4px solid #fff !important; animation: silverPulse 1s infinite alternate; }
+        @keyframes silverPulse { from { box-shadow: 0 0 10px #94a3b8; } to { box-shadow: 0 0 25px white; } }
     </style>
 </head>
 <body>
 
 <div id="game-overlay">
-    <h1 id="otitle" style="font-size: 3.5rem; margin: 0; color: var(--s);"></h1>
-    <p id="obody" style="white-space: pre-line; text-align: center; font-size: 1.2rem; margin: 20px 0; line-height: 1.6;"></p>
+    <h1 id="otitle" style="font-size: 3rem; margin: 0; color: var(--s);"></h1>
+    <p id="obody" style="white-space: pre-line; text-align: center; font-size: 1.1rem; margin: 20px 0; line-height: 1.6;"></p>
     <div class="btn-group">
         <button class="secondary-btn" onclick="hideOverlay()">SEE BOARD</button>
         <button class="primary-btn" style="animation:none" onclick="window.location.href=window.location.href">PLAY AGAIN</button>
     </div>
 </div>
 
+<div class="nav">
+    <a href="deck.html">MY DECK</a>
+    <a href="collect.html">SCANNER</a>
+    <a href="battle.html" class="active">BATTLE</a>
+</div>
+
 <div class="header">
-    <div style="color:var(--s); font-weight: 900; letter-spacing: 2px;">BONUS TARGET: <span id="btarget">---</span></div>
+    <div style="color:var(--s); font-weight: 900; letter-spacing: 2px; font-size: 0.8rem;">BONUS TARGET: <span id="btarget">---</span></div>
     <div class="hud">
         <div style="color: var(--p);">YOU: <span id="p-score">0</span></div>
-        <div id="round-txt" style="font-size: 0.9rem; opacity: 0.8; font-family: monospace;">ROUND 1: PLACE 4</div>
+        <div id="round-txt" style="font-size: 0.75rem; opacity: 0.8; font-family: monospace; padding-top: 4px;">ROUND 1</div>
         <div style="color: #666;">CPU: <span id="c-score">0</span></div>
     </div>
 </div>
@@ -78,118 +119,174 @@
 </div>
 
 <script>
-    const COLORS = ['red', 'blue', 'green'];
-    const bColor = COLORS[Math.floor(Math.random() * 3)];
+    const ALL_COLORS = ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'pink', 'cyan', 'silver', 'gold'];
+    const TARGET_POOL = ['red', 'blue', 'green'];
+    let fullInventory = JSON.parse(localStorage.getItem('gToonCollection') || '[]');
+
+    if (fullInventory.length < 8) {
+        document.body.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; text-align:center; padding:20px; background:#0b0e14; color:white;"><h1>INSUFFICIENT COINS</h1><button class="primary-btn" onclick="window.location.href='collect.html'">GO SCANNING</button></div>`;
+        throw new Error("Insufficient coins.");
+    }
+
+    let inv = fullInventory.sort(() => 0.5 - Math.random()).slice(0, 12);
+    const bColor = TARGET_POOL[Math.floor(Math.random() * 3)];
     document.getElementById('btarget').innerText = bColor.toUpperCase();
     document.getElementById('btarget').style.color = `var(--${bColor})`;
 
-    let inv = JSON.parse(localStorage.getItem('gToonCollection') || '[]');
-    if(inv.length < 12) {
-        inv = Array.from({length: 12}, (_, i) => ({
-            char: ["🚀","👾","💎","🔥","🌊","🌲"][i%6],
-            color: COLORS[i%3], power: Math.floor(Math.random() * 10) + 10
-        }));
-    }
-
     const cpuDeck = Array.from({length:8}, () => ({
-        char: "👾", color: COLORS[Math.floor(Math.random()*3)], power: Math.floor(Math.random()*10)+10
+        char: "CPU G-UNIT", color: ALL_COLORS[Math.floor(Math.random()*ALL_COLORS.length)], power: Math.floor(Math.random()*10)+10
     }));
 
     let picks = [];
     let round = 1;
     let revealed = 0;
     let pPts = 0; let cPts = 0;
+    let isRevealingMode = false;
     
     const placementGoals = { 1: 4, 2: 8, 3: 8 };
     const revealGoals = { 1: 4, 2: 7, 3: 8 };
+
+    function createCoinHTML(coin) {
+        return `
+            <div class="coin-inner">
+                <div class="coin-face coin-front">?</div>
+                <div class="coin-face coin-back ${coin.color}">
+                    <div class="c-tag">${coin.color.toUpperCase()}</div>
+                    <div class="c-pow">${coin.power}</div>
+                    <div class="c-name">${coin.char}</div>
+                </div>
+            </div>`;
+    }
 
     function updateUI() {
         const goal = placementGoals[round];
         const hDiv = document.getElementById('hand');
         hDiv.innerHTML = "";
         
-        inv.forEach((c, i) => {
-            const d = document.createElement('div');
-            d.className = `hand-coin ${c.color}`;
-            d.innerHTML = c.power;
-            d.onclick = () => {
-                if (round === 3) {
-                    swapSpecific(i);
-                } else if (picks.length < goal) {
-                    picks.push(inv.splice(i,1)[0]);
-                    updateUI();
-                }
-            };
-            hDiv.appendChild(d);
-        });
+        if (!isRevealingMode) {
+            inv.forEach((c, i) => {
+                const d = document.createElement('div');
+                d.className = `hand-coin ${c.color}`;
+                d.innerHTML = c.power;
+                d.onclick = () => {
+                    if (round === 3) swapSpecific(i);
+                    else if (picks.length < goal) {
+                        picks.push(inv.splice(i,1)[0]);
+                        updateUI();
+                    }
+                };
+                hDiv.appendChild(d);
+            });
+        }
 
         for(let i=0; i<8; i++) {
             const pSlot = document.getElementById(`ps${i}`);
             const cSlot = document.getElementById(`cs${i}`);
+            
             if(i >= revealed) {
                 if(picks[i]) {
-                    const isLast = (i === 7 && round === 3);
-                    pSlot.innerHTML = `<div class="coin-inner ${isLast ? 'highlight' : ''}" onclick="recall(${i})"><div class="coin-face coin-back ${picks[i].color}" style="transform:none"><span>${picks[i].power}</span></div></div>`;
+                    pSlot.innerHTML = createCoinHTML(picks[i]);
+                    if (!isRevealingMode) {
+                        pSlot.querySelector('.coin-inner').style.transform = "rotateY(180deg)";
+                        pSlot.querySelector('.coin-inner').onclick = () => recall(i);
+                        if(picks[i].color === 'silver' && round === 3) pSlot.querySelector('.coin-back').classList.add('highlight-silver');
+                    }
                     cSlot.innerHTML = `<div class="coin-inner"><div class="coin-face coin-front">?</div></div>`;
                 } else { pSlot.innerHTML = ""; cSlot.innerHTML = ""; }
             }
         }
         
+        const actionArea = document.getElementById('action-area');
         if (round === 3) {
-            document.getElementById('round-txt').innerText = "TAP A COIN IN HAND TO SWAP, OR KEEP CURRENT";
-            document.getElementById('action-area').innerHTML = `<button class="primary-btn" onclick="startReveal()">KEEP & REVEAL FINAL</button>`;
-        } else {
-            const btn = document.getElementById('main-btn');
-            if(btn) btn.disabled = (picks.length !== goal);
+            document.getElementById('round-txt').innerText = "TAP HAND TO SWAP | SILVER ALCHEMY ENABLED";
+            actionArea.innerHTML = `<button class="primary-btn" onclick="checkSilverAbilities()">FINALIZE & REVEAL</button>`;
+        } else if (!isRevealingMode) {
+            actionArea.innerHTML = `<button id="main-btn" class="primary-btn" onclick="startReveal()" ${picks.length !== goal ? 'disabled' : ''}>REVEAL ROUND</button>`;
             document.getElementById('round-txt').innerText = `ROUND ${round}: ADD ${goal - picks.length}`;
         }
     }
 
     function recall(i) {
-        if(i < revealed || round === 3) return;
+        if(i < revealed || round === 3 || isRevealingMode) return;
         inv.push(picks.splice(i,1)[0]);
         updateUI();
     }
 
     function swapSpecific(invIndex) {
-        const oldCoin = picks.pop(); // Remove current 8th coin
-        const newCoin = inv.splice(invIndex, 1)[0]; // Get the specific choice
-        picks.push(newCoin);
+        if(isRevealingMode) return;
+        const oldCoin = picks.pop();
+        picks.push(inv.splice(invIndex, 1)[0]);
         inv.push(oldCoin);
         updateUI();
-        // Optional: show a quick toast or message that swap happened
+    }
+
+    async function checkSilverAbilities() {
+        const silverCoin = picks.find((c, idx) => c.color === 'silver' && idx >= revealed);
+        if (silverCoin) {
+            const silverIdx = picks.indexOf(silverCoin);
+            document.getElementById('round-txt').innerText = "SILVER ALCHEMY: PICK YOUR NEW ELEMENT!";
+            
+            let btnHTML = `<div class="btn-group">`;
+            ALL_COLORS.forEach(color => {
+                if(color !== 'silver') {
+                    btnHTML += `<button class="hand-coin ${color}" onclick="transformSilver(${silverIdx}, '${color}')">${color.substring(0,3).toUpperCase()}</button>`;
+                }
+            });
+            btnHTML += `</div>`;
+            document.getElementById('action-area').innerHTML = btnHTML;
+        } else { 
+            startReveal(); 
+        }
+    }
+
+    function transformSilver(idx, newColor) {
+        picks[idx].color = newColor;
+        updateUI();
+        checkSilverAbilities();
     }
 
     async function startReveal() {
+        isRevealingMode = true; 
+        
+        // CPU LOGIC: Transform their silvers to the target color automatically
+        cpuDeck.forEach(c => { if(c.color === 'silver') c.color = bColor; });
+
+        updateUI(); 
         const area = document.getElementById('action-area');
         area.innerHTML = `<button class="primary-btn" disabled>REVEALING...</button>`;
         const goal = revealGoals[round];
 
+        await new Promise(r => setTimeout(r, 1000));
+
         for(let i = revealed; i < goal; i++) {
             const ps = document.getElementById(`ps${i}`);
             const cs = document.getElementById(`cs${i}`);
-            ps.innerHTML = `<div class="coin-inner"><div class="coin-face coin-front">?</div><div class="coin-face coin-back ${picks[i].color}"><span>${picks[i].power}</span></div></div>`;
-            cs.innerHTML = `<div class="coin-inner"><div class="coin-face coin-front">?</div><div class="coin-face coin-back ${cpuDeck[i].color}"><span>${cpuDeck[i].power}</span></div></div>`;
             
+            ps.innerHTML = createCoinHTML(picks[i]);
+            cs.innerHTML = createCoinHTML(cpuDeck[i]);
+
+            document.getElementById('round-txt').innerText = "PLAYER TURN...";
             await new Promise(r => setTimeout(r, 200));
             ps.classList.add('revealed');
-            cs.classList.add('revealed');
+            await new Promise(r => setTimeout(r, 2000));
 
-            await new Promise(r => setTimeout(r, 2300));
+            document.getElementById('round-txt').innerText = "CPU TURN...";
+            cs.classList.add('revealed');
+            await new Promise(r => setTimeout(r, 2000));
+
             pPts += picks[i].power;
             cPts += cpuDeck[i].power;
             document.getElementById('p-score').innerText = pPts;
             document.getElementById('c-score').innerText = cPts;
             revealed++;
+            await new Promise(r => setTimeout(r, 500));
         }
 
         if(round < 3) {
             round++;
-            area.innerHTML = `<button id="main-btn" class="primary-btn" onclick="startReveal()">REVEAL ROUND</button>`;
+            isRevealingMode = false;
             updateUI();
-        } else {
-            finish();
-        }
+        } else { finish(); }
     }
 
     function hideOverlay() {
@@ -201,9 +298,7 @@
         const pMaj = picks.filter(c => c.color === bColor).length;
         const cMaj = cpuDeck.filter(c => c.color === bColor).length;
         let finalP = pPts; let finalC = cPts;
-        
-        if(pMaj > cMaj) finalP += 15;
-        else if (cMaj > pMaj) finalC += 15;
+        if(pMaj > cMaj) finalP += 15; else if (cMaj > pMaj) finalC += 15;
         
         document.getElementById('game-overlay').style.display = "flex";
         document.getElementById('otitle').innerText = finalP > finalC ? "VICTORY" : "DEFEAT";

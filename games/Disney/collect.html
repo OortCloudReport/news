@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gToons - Magic Scanner</title>
-
     <script src="data.js"></script>
-
     <style>
         :root { 
             --p: #3b82f6; --s: #f59e0b; --bg: #0b0e14; 
@@ -47,9 +45,20 @@
             transform: scale(1.05);
         }
 
-        #status { font-size: 1rem; padding: 0 40px; line-height: 1.5; color: #94a3b8; min-height: 3em; }
-        #status strong { color: white; }
+        /* RAINBOW EFFECT */
+        .rainbow {
+            background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            background-size: 200% 200%;
+            animation: rainbowFlow 3s linear infinite;
+            color: white; text-shadow: 0 0 5px black;
+        }
+        @keyframes rainbowFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
 
+        #status { font-size: 1rem; padding: 0 40px; line-height: 1.5; color: #94a3b8; min-height: 3em; }
         .card-reveal { 
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); 
             z-index: 1100; flex-direction: column; align-items: center; justify-content: center; 
@@ -77,6 +86,7 @@
 
     <div class="nav">
         <a href="deck.html">MY DECK</a>
+        <a href="challengers.html">CHALLENGERS</a>
         <a href="collect.html" class="active">SCANNER</a>
         <a href="battle.html">BATTLE</a>
     </div>
@@ -87,10 +97,11 @@
     </div>
 
     <div id="reveal" class="card-reveal">
-        <h2 style="color:var(--s); letter-spacing: 2px;">NEW COIN FOUND!</h2>
+        <h2 style="color:var(--s); letter-spacing: 2px;">NEW COIN & CHALLENGER!</h2>
         <div id="coin-display" class="new-coin"></div>
         <h3 id="coin-name" style="font-size: 1.5rem; margin-top: 0;"></h3>
-        <p id="coin-rarity" style="opacity: 0.6; margin-bottom: 30px;"></p>
+        <p id="coin-rarity" style="opacity: 0.6; margin-bottom: 10px;"></p>
+        <p style="color:var(--s); font-weight:bold; margin-bottom: 30px;">🌈 A Challenger appeared in your list!</p>
         <button class="btn-collect" onclick="closeReveal()">ADD TO DECK</button>
     </div>
 
@@ -98,7 +109,6 @@
     const COLORS = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "silver", "gold"];
     let currentNearbyRide = null;
     let userCoords = { lat: 0, lng: 0 };
-    let gpsWatchId = null;
 
     function showToast(msg, color = "var(--p)") {
         const t = document.getElementById('toast');
@@ -109,12 +119,10 @@
     }
 
     function getDistanceFeet(lat1, lon1, lat2, lon2) {
-        const R = 20902231; // Feet
+        const R = 20902231;
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
         return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
     }
 
@@ -125,71 +133,40 @@
     }
 
     window.onload = () => {
-        // Start the single continuous watch to prevent repetitive popups
         if (navigator.geolocation) {
-            gpsWatchId = navigator.geolocation.watchPosition(pos => {
+            navigator.geolocation.watchPosition(pos => {
                 userCoords.lat = pos.coords.latitude;
                 userCoords.lng = pos.coords.longitude;
                 updateUI();
             }, (err) => {
-                // If a warp is active, we don't care about GPS errors
-                if(!localStorage.getItem('warpedRide')) {
-                    document.getElementById('status').innerText = "Location Error: " + err.message;
-                }
-            }, { 
-                enableHighAccuracy: true,
-                timeout: 15000,
-                maximumAge: 0 
-            });
+                if(!localStorage.getItem('warpedRide')) document.getElementById('status').innerText = "Location Error: " + err.message;
+            }, { enableHighAccuracy: true });
         }
-
-        // TAB SYNC: Check for changes in Admin
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'gToonRides' || e.key === 'warpedRide') {
-                updateUI();
-            }
-        });
-
-        // Initial UI check
         updateUI();
     };
 
     function updateUI() {
         const rides = JSON.parse(localStorage.getItem('gToonRides') || JSON.stringify(RIDE_COORDINATES));
         const warpId = localStorage.getItem('warpedRide');
-        let found = null;
+        let found = warpId ? rides.find(r => r.id === warpId) : null;
         
-        // --- THE WARP LOGIC ---
-        if (warpId) {
-            found = rides.find(r => r.id === warpId);
-            if (found) {
-                console.log("Admin Warp Active for: " + found.main);
-            }
-        }
-
-        // --- PHYSICAL GPS LOGIC (Only if no warp active) ---
         if (!found) {
             rides.forEach(ride => {
-                const feetAway = getDistanceFeet(userCoords.lat, userCoords.lng, ride.lat, ride.lng);
-                if (feetAway <= 50) found = ride;
+                if (getDistanceFeet(userCoords.lat, userCoords.lng, ride.lat, ride.lng) <= 50) found = ride;
             });
         }
 
         const btn = document.getElementById('scan-btn');
-        const status = document.getElementById('status');
-
         if (found) {
             currentNearbyRide = found;
             btn.innerText = `SCAN FOR\n${found.main.toUpperCase()}`;
             btn.classList.add('active-zone');
-            status.innerHTML = warpId 
-                ? `🚀 <strong>Warp Active!</strong><br>Scanning ${found.main}.`
-                : `✨ <strong>Zone Detected!</strong><br>You are at ${found.main}.`;
+            document.getElementById('status').innerHTML = `✨ <strong>Zone Detected!</strong><br>At ${found.main}.`;
         } else {
             currentNearbyRide = null;
             btn.innerText = "SCAN AREA";
             btn.classList.remove('active-zone');
-            status.innerText = "Walk to your pinned locations to scan...";
+            document.getElementById('status').innerText = "Walk to your pinned locations to scan...";
         }
     }
 
@@ -197,27 +174,42 @@
         if (!currentNearbyRide) return showToast("⚠️ Walk closer to a zone!", "#ef4444");
         
         let cooldowns = JSON.parse(localStorage.getItem('gToonCooldowns') || '{}');
-        if (isSameDay(cooldowns[currentNearbyRide.id])) {
-            return showToast(`🚫 Area depleted! Try again tomorrow.`, "#f97316");
-        }
+        if (isSameDay(cooldowns[currentNearbyRide.id])) return showToast(`🚫 Area depleted! Try again tomorrow.`, "#f97316");
 
         let inventory = JSON.parse(localStorage.getItem('gToonCollection') || '[]');
+        let challengers = JSON.parse(localStorage.getItem('gToonChallengers') || '[]');
+        
         const pool = RIDE_SETS[currentNearbyRide.id] || [currentNearbyRide.main];
         const missing = pool.filter(n => !inventory.some(c => c.char === n));
 
         if (missing.length === 0) return showToast("✅ All coins collected here!", "var(--s)");
 
+        // 1. Get Coin
         const coin = { 
             char: missing[Math.floor(Math.random() * missing.length)], 
             color: COLORS[Math.floor(Math.random() * COLORS.length)], 
-            power: Math.floor(Math.random() * 15) + 1, 
+            power: Math.floor(Math.random() * 15) + 5, 
             rideId: currentNearbyRide.id 
         };
 
+        // 2. Get Challenger
+        const newChallenger = {
+            id: "CHAL_" + Date.now(),
+            name: currentNearbyRide.main + " Guardian",
+            reward: {
+                char: currentNearbyRide.main + " MASTER",
+                color: "rainbow",
+                power: 25,
+                rideId: currentNearbyRide.id
+            }
+        };
+
         inventory.push(coin);
+        challengers.push(newChallenger);
         cooldowns[currentNearbyRide.id] = Date.now();
         
         localStorage.setItem('gToonCollection', JSON.stringify(inventory));
+        localStorage.setItem('gToonChallengers', JSON.stringify(challengers));
         localStorage.setItem('gToonCooldowns', JSON.stringify(cooldowns));
         
         showReveal(coin);
@@ -232,9 +224,7 @@
         document.getElementById('reveal').style.display = "flex";
     }
 
-    function closeReveal() { 
-        document.getElementById('reveal').style.display = "none"; 
-    }
+    function closeReveal() { document.getElementById('reveal').style.display = "none"; }
 </script>
 </body>
 </html>

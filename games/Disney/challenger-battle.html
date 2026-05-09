@@ -12,7 +12,7 @@
             --pink: #ec4899; --cyan: #06b6d4; --silver: #94a3b8; --gold: #d97706;
         }
         
-        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+        body { background: var(--bg); color: white; font-family: system-ui, sans-serif; margin: 0; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
         .nav { display: flex; justify-content: space-around; background: #000; padding: 12px; border-bottom: 2px solid var(--red); }
         .nav span { color: var(--red); font-weight: 900; letter-spacing: 2px; }
 
@@ -21,54 +21,73 @@
         
         .arena { flex: 1; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; flex-wrap: wrap; }
         .circles-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: rgba(255,0,0,0.05); padding: 10px; border-radius: 20px; border: 1px solid var(--red); }
-        .coin-slot { width: 65px; height: 65px; border-radius: 50%; border: 2px dashed #334155; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
+        .coin-slot { width: 70px; height: 70px; border-radius: 50%; border: 2px dashed #334155; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
         
-        .coin-inner { position: relative; width: 100%; height: 100%; transition: transform 0.8s; transform-style: preserve-3d; }
+        .coin-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; cursor: pointer; }
         .revealed .coin-inner { transform: rotateY(180deg); }
-        .coin-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,0.2); overflow: hidden; }
+        .coin-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 4px solid rgba(255,255,255,0.2); overflow: hidden; }
         .coin-front { background: radial-gradient(circle, #222, #000); color: var(--red); font-weight: 900; }
         .coin-back { transform: rotateY(180deg); }
         
-        .c-pow { font-size: 1.2rem; font-weight: 900; z-index: 2; }
-        .c-name { font-size: 0.4rem; font-weight: 800; text-transform: uppercase; z-index: 2; text-align: center; }
+        .c-pow { font-size: 1.3rem; font-weight: 900; z-index: 2; }
+        .c-name { font-size: 0.45rem; font-weight: 800; text-transform: uppercase; z-index: 2; text-align: center; }
 
-        .rainbow {
-            background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
-            background-size: 200% 200%;
-            animation: rainbowFlow 3s linear infinite;
-            color: white; text-shadow: 0 0 5px black;
-        }
-        @keyframes rainbowFlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        /* Color Gradients */
+        .red { background: radial-gradient(circle, #ef4444, #7f1d1d); }
+        .blue { background: radial-gradient(circle, #3b82f6, #1e3a8a); }
+        .green { background: radial-gradient(circle, #22c55e, #14532d); }
+        .yellow { background: radial-gradient(circle, #eab308, #854d0e); color: #000; }
+        .purple { background: radial-gradient(circle, #a855f7, #581c87); }
+        .orange { background: radial-gradient(circle, #f97316, #7c2d12); }
+        .pink { background: radial-gradient(circle, #ec4899, #831843); }
+        .cyan { background: radial-gradient(circle, #06b6d4, #164e63); }
+        .silver { background: radial-gradient(circle, #94a3b8, #334155); }
+        .gold { background: radial-gradient(circle, #d97706, #78350f); }
 
-        .red { background: var(--red); } .blue { background: var(--blue); } .green { background: var(--green); }
-        .yellow { background: var(--yellow); color: #000; } .purple { background: var(--purple); }
-        .orange { background: var(--orange); } .pink { background: var(--pink); }
-        .cyan { background: var(--cyan); } .silver { background: var(--silver); }
-        .gold { background: var(--gold); }
-
+        .full-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .alchemy-box { border: 2px solid var(--silver); padding: 30px; border-radius: 20px; background: #111; }
+        
         .footer { background: #000; border-top: 2px solid var(--red); padding: 15px; min-height: 120px; }
         .hand { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; justify-content: center; flex-wrap: wrap; }
         .hand-coin { min-width: 42px; height: 42px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-weight: 900; cursor: pointer; font-size: 0.75rem; }
-        .primary-btn { background: var(--red); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: 900; cursor: pointer; }
+        .primary-btn { background: var(--red); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: 900; cursor: pointer; margin-top: 10px; }
+        .secondary-btn { background: #333; color: white; border: none; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         
-        #game-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .score-box { background: #111; padding: 15px; border-radius: 10px; border: 1px solid #333; min-width: 140px; }
     </style>
 </head>
 <body>
 
-<div id="game-overlay">
+<!-- Win/Loss Overlay -->
+<div id="game-overlay" class="full-overlay">
     <h1 id="otitle" style="font-size: 3rem; margin: 0;"></h1>
-    <p id="obody" style="white-space: pre-line; font-size: 1.1rem; margin: 20px 0;"></p>
-    <button class="primary-btn" onclick="window.location.href='challengers.html'">RETURN TO LIST</button>
+    <div id="score-details" style="display:flex; gap:10px; margin-bottom: 20px;"></div>
+    <p id="obody" style="font-size: 1.1rem; margin-bottom: 20px;"></p>
+    <button class="primary-btn" onclick="window.location.href='challengers.html'">CONTINUE</button>
+    <button class="secondary-btn" onclick="document.getElementById('game-overlay').style.display='none'">VIEW BOARD</button>
+</div>
+
+<!-- Alchemy Overlay -->
+<div id="alchemy-overlay" class="full-overlay">
+    <div class="alchemy-box">
+        <h2 style="color: var(--silver); margin: 0;">SILVER ALCHEMY</h2>
+        <p>Target Bonus: <span id="atarget" style="font-weight:bold;">---</span></p>
+        <p style="opacity: 0.8;">Transform all Silver coins to:</p>
+        <div style="display:flex; gap:15px; justify-content:center; margin-top: 20px;">
+            <div class="hand-coin red" style="width:60px; height:60px; font-size:1.2rem;" onclick="transformAllSilver('red')">R</div>
+            <div class="hand-coin blue" style="width:60px; height:60px; font-size:1.2rem;" onclick="transformAllSilver('blue')">B</div>
+            <div class="hand-coin green" style="width:60px; height:60px; font-size:1.2rem;" onclick="transformAllSilver('green')">G</div>
+        </div>
+    </div>
 </div>
 
 <div class="nav"><span>CHALLENGER BATTLE</span></div>
 
 <div class="header">
-    <div style="color:var(--s); font-weight: 900; font-size: 0.8rem;">TARGET ELEMENT: <span id="btarget">---</span></div>
+    <div style="color:var(--s); font-weight: 900; font-size: 0.8rem;">BONUS TARGET: <span id="btarget">---</span></div>
     <div class="hud">
         <div style="color: var(--p);">YOU: <span id="p-score">0</span></div>
-        <div id="round-txt" style="font-size: 0.7rem; opacity: 0.8;">BOSS FIGHT</div>
+        <div id="round-txt" style="font-size: 0.7rem; opacity: 0.8;">ROUND 1</div>
         <div style="color: var(--red);">BOSS: <span id="c-score">0</span></div>
     </div>
 </div>
@@ -99,25 +118,26 @@
 
     let fullInventory = JSON.parse(localStorage.getItem('gToonCollection') || '[]');
     let inv = fullInventory.sort(() => 0.5 - Math.random()).slice(0, 12);
-    const bColor = TARGET_POOL[Math.floor(Math.random() * 3)];
+    let bColor = TARGET_POOL[Math.floor(Math.random() * 3)];
+    
     document.getElementById('btarget').innerText = bColor.toUpperCase();
+    document.getElementById('btarget').style.color = `var(--${bColor})`;
+    document.getElementById('atarget').innerText = bColor.toUpperCase();
+    document.getElementById('atarget').style.color = `var(--${bColor})`;
 
-    // CPU DECK: 1 Boss Coin + 7 Randoms (Power 1-15)
     const cpuDeck = Array.from({length:8}, (_, i) => {
-        if(i === 0) return activeBoss.reward; 
-        return { 
-            char: "Minion", 
-            color: ALL_COLORS[Math.floor(Math.random()*10)], 
-            power: Math.floor(Math.random()*15)+1 
-        };
+        if(i === 0) return { ...activeBoss.reward, color: 'red' };
+        return { char: "Guardian", color: ALL_COLORS[Math.floor(Math.random()*ALL_COLORS.length)], power: Math.floor(Math.random()*15)+5 };
     });
 
     let picks = [];
     let round = 1, revealed = 0, pPts = 0, cPts = 0, isRevealingMode = false;
+    
     const placementGoals = { 1: 4, 2: 8, 3: 8 };
     const revealGoals = { 1: 4, 2: 7, 3: 8 };
 
-    function createCoinHTML(coin) {
+    function createCoinHTML(coin, showBack = false) {
+        const revealClass = showBack ? 'revealed' : '';
         return `
             <div class="coin-inner">
                 <div class="coin-face coin-front">?</div>
@@ -129,69 +149,137 @@
     }
 
     function updateUI() {
+        const goal = placementGoals[round];
         const hDiv = document.getElementById('hand');
         hDiv.innerHTML = "";
+        
         if (!isRevealingMode) {
             inv.forEach((c, i) => {
                 const d = document.createElement('div');
                 d.className = `hand-coin ${c.color}`;
                 d.innerHTML = c.power;
-                d.onclick = () => { if(picks.length < placementGoals[round]) { picks.push(inv.splice(i,1)[0]); updateUI(); } };
+                d.onclick = () => {
+                    if (round === 3) swapSlotEight(i);
+                    else if (picks.length < goal) {
+                        picks.push(inv.splice(i,1)[0]);
+                        updateUI();
+                    }
+                };
                 hDiv.appendChild(d);
             });
         }
+
         for(let i=0; i<8; i++) {
-            const pSlot = document.getElementById(`ps${i}`);
-            if(i >= revealed && picks[i]) {
-                pSlot.innerHTML = createCoinHTML(picks[i]);
-                pSlot.querySelector('.coin-inner').style.transform = "rotateY(180deg)";
+            const ps = document.getElementById(`ps${i}`);
+            if(i >= revealed) {
+                if(picks[i]) {
+                    ps.innerHTML = createCoinHTML(picks[i]);
+                    // Show the front of the coin during placement rounds
+                    if (!isRevealingMode) {
+                        ps.classList.add('revealed'); 
+                        if(round < 3) ps.onclick = () => recall(i);
+                    }
+                } else { ps.innerHTML = ""; ps.classList.remove('revealed'); }
             }
         }
-        document.getElementById('action-area').innerHTML = `<button class="primary-btn" onclick="startReveal()" ${picks.length < placementGoals[round] ? 'disabled' : ''}>ENGAGE BOSS</button>`;
+        
+        const area = document.getElementById('action-area');
+        if (round === 3) {
+            document.getElementById('round-txt').innerText = "ROUND 3: SWAP SLOT 8";
+            area.innerHTML = `<button class="primary-btn" onclick="checkSilver()">START BATTLE</button>`;
+        } else if (!isRevealingMode) {
+            area.innerHTML = `<button class="primary-btn" onclick="startReveal()" ${picks.length !== goal ? 'disabled' : ''}>REVEAL ROUND</button>`;
+            document.getElementById('round-txt').innerText = `ROUND ${round}: ADD ${goal - picks.length} COINS`;
+        }
+    }
+
+    function recall(i) {
+        if(i < revealed || round === 3 || isRevealingMode) return;
+        inv.push(picks.splice(i,1)[0]);
+        updateUI();
+    }
+
+    function swapSlotEight(invIdx) {
+        const old = picks[7];
+        picks[7] = inv.splice(invIdx, 1)[0];
+        inv.push(old);
+        updateUI();
+    }
+
+    function checkSilver() {
+        if (picks.some(c => c.color === 'silver')) {
+            document.getElementById('alchemy-overlay').style.display = 'flex';
+        } else { startReveal(); }
+    }
+
+    function transformAllSilver(col) {
+        picks.forEach(c => { if(c.color === 'silver') c.color = col; });
+        document.getElementById('alchemy-overlay').style.display = 'none';
+        updateUI();
+        startReveal();
     }
 
     async function startReveal() {
-        isRevealingMode = true; updateUI();
+        isRevealingMode = true;
+        // Reset player visuals to face-down before cinematic reveal
+        for(let i = revealed; i < 8; i++) {
+            const ps = document.getElementById(`ps${i}`);
+            if(ps) ps.classList.remove('revealed');
+        }
+
+        updateUI();
+        document.getElementById('action-area').innerHTML = `<button class="primary-btn" disabled>REVEALING...</button>`;
+        
         const goal = revealGoals[round];
         for(let i = revealed; i < goal; i++) {
-            const ps = document.getElementById(`ps${i}`), cs = document.getElementById(`cs${i}`);
+            const ps = document.getElementById(`ps${i}`);
+            const cs = document.getElementById(`cs${i}`);
+            
             ps.innerHTML = createCoinHTML(picks[i]);
             cs.innerHTML = createCoinHTML(cpuDeck[i]);
-            ps.classList.add('revealed'); await new Promise(r => setTimeout(r, 1000));
-            cs.classList.add('revealed'); await new Promise(r => setTimeout(r, 1000));
-            pPts += picks[i].power; cPts += cpuDeck[i].power;
+
+            await new Promise(r => setTimeout(r, 600));
+            ps.classList.add('revealed'); 
+            await new Promise(r => setTimeout(r, 800));
+            cs.classList.add('revealed'); 
+            await new Promise(r => setTimeout(r, 800));
+
+            pPts += picks[i].power;
+            cPts += cpuDeck[i].power;
             document.getElementById('p-score').innerText = pPts;
             document.getElementById('c-score').innerText = cPts;
             revealed++;
         }
-        if(round < 3) { round++; isRevealingMode = false; updateUI(); } else { finish(); }
+
+        if(round < 3) { 
+            round++; isRevealingMode = false; updateUI(); 
+        } else { finish(); }
     }
 
     function finish() {
         const pMaj = picks.filter(c => c.color === bColor).length;
         const cMaj = cpuDeck.filter(c => c.color === bColor).length;
-        let finalP = pPts + (pMaj > cMaj ? 15 : 0);
-        let finalC = cPts + (cMaj > pMaj ? 15 : 0);
-        
-        const win = finalP > finalC;
-        
-        // UPDATE STORAGE: Add reward if won, ALWAYS remove challenger
+        const pBonus = (pMaj > cMaj) ? 15 : 0;
+        const cBonus = (cMaj > pMaj) ? 15 : 0;
+        const win = (pPts + pBonus) > (cPts + cBonus);
+
         if(win) {
             fullInventory.push(activeBoss.reward);
             localStorage.setItem('gToonCollection', JSON.stringify(fullInventory));
         }
-
         challengers.splice(chalIdx, 1);
         localStorage.setItem('gToonChallengers', JSON.stringify(challengers));
 
+        document.getElementById('score-details').innerHTML = `
+            <div class="score-box" style="border-color:var(--p)">YOU: ${pPts} + ${pBonus}</div>
+            <div class="score-box" style="border-color:var(--red)">BOSS: ${cPts} + ${cBonus}</div>
+        `;
+
         document.getElementById('game-overlay').style.display = "flex";
-        const t = document.getElementById('otitle');
-        t.innerText = win ? "VICTORY!" : "DEFEATED";
-        t.style.color = win ? "var(--s)" : "var(--red)";
-        
-        document.getElementById('obody').innerText = win 
-            ? `You conquered the Guardian and earned the Rainbow Coin!\nIt has been added to your collection.`
-            : `You lost the battle. The Guardian has vanished,\nand their Rainbow Coin is lost... for now.`;
+        document.getElementById('otitle').innerText = win ? "VICTORY!" : "DEFEAT";
+        document.getElementById('otitle').style.color = win ? "var(--s)" : "var(--red)";
+        document.getElementById('obody').innerText = win ? "Reward coin added to collection." : "The challenger has left.";
+        document.getElementById('action-area').innerHTML = `<button class="primary-btn" onclick="window.location.href='challengers.html'">BACK TO MAP</button>`;
     }
 
     updateUI();

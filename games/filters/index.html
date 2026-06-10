@@ -1,26 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Guava 2 Filter Studio</title>
+    <title>Guava 3 Filter Studio</title>
     <style>
         body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: white; margin: 0; padding: 20px; }
         #container { position: relative; width: 640px; height: 480px; margin: 20px auto; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); background: black; }
         canvas { width: 640px; height: 480px; background: black; }
         .controls { margin-top: 20px; }
-        button { font-size: 16px; font-weight: bold; padding: 12px 24px; margin: 10px; cursor: pointer; border-radius: 6px; border: none; transition: 0.2s; }
+        button { font-size: 16px; font-weight: bold; padding: 12px 24px; margin: 10px; cursor: pointer; border-radius: 6px; border: none; }
         #start { background: #00ca71; color: white; }
-        #start:disabled { background: #444; color: #888; cursor: not-allowed; }
+        #start:disabled { background: #444; color: #888; }
         #stop { background: #ff3b30; color: white; }
-        #stop:disabled { background: #444; color: #888; cursor: not-allowed; }
+        #stop:disabled { background: #444; color: #888; }
+        .sliders { display: flex; justify-content: center; gap: 20px; margin: 20px auto; max-width: 600px; background: #2a2a2a; padding: 15px; border-radius: 8px; }
+        label { display: block; font-size: 12px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
     <h1>Guava Filter Studio</h1>
+    
     <div id="container">
-        <!-- Keep video feed active but completely invisible so your room background never displays -->
-        <video id="webcam" autoplay playsinline muted style="position: absolute; width: 1px; height: 1px; opacity: 0.01;"></video>
+        <!-- The camera feed runs completely isolated in the background -->
+        <video id="webcam" autoplay playsinline muted style="display:none;"></video>
         <canvas id="output"></canvas>
     </div>
+
+    <!-- Sliders let you manually calibrate the tracking to align with your real face perfectly -->
+    <div class="sliders">
+        <div>
+            <label>Face Left/Right</label>
+            <input type="range" id="faceX" min="100" max="540" value="320">
+        </div>
+        <div>
+            <label>Face Up/Down</label>
+            <input type="range" id="faceY" min="100" max="380" value="220">
+        </div>
+        <div>
+            <label>Eye Spacing</label>
+            <input type="range" id="eyeDist" min="30" max="100" value="55">
+        </div>
+    </div>
+
     <div class="controls">
         <button id="start">Record</button>
         <button id="stop" disabled>Stop Recording</button>
@@ -32,6 +52,11 @@
         const ctx = canvas.getContext('2d');
         const startBtn = document.getElementById('start');
         const stopBtn = document.getElementById('stop');
+        
+        // Calibration Slider Selectors
+        const faceXSlider = document.getElementById('faceX');
+        const faceYSlider = document.getElementById('faceY');
+        const eyeDistSlider = document.getElementById('eyeDist');
         
         let mediaRecorder;
         let recordedChunks = [];
@@ -51,11 +76,10 @@
                 drawFilter();
             });
 
-            // Stream integration tracking loop
             const canvasStream = canvas.captureStream(30); 
             const audioTracks = stream.getAudioTracks();
             if(audioTracks.length > 0) {
-                canvasStream.addTrack(audioTracks[0]);
+                canvasStream.addTrack(audioTracks);
             }
 
             mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm;codecs=vp8,opus' });
@@ -71,54 +95,53 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             };
-        })
-        .catch(err => {
-            console.error("Camera loading sequence logs:", err);
         });
 
-        // This function extracts your webcam facial details and overlays them safely onto the fruit canvas
-        function overlayFeatureOnGuava(faceCamX, faceCamY, radius, targetX, targetY) {
+        // Pulls a clean slice of your face from the camera and stamps it over the solid image
+        function stampFeature(camX, camY, radius, targetX, targetY) {
             ctx.save();
             ctx.beginPath();
             ctx.arc(targetX, targetY, radius, 0, Math.PI * 2);
             ctx.closePath();
             ctx.clip();
             
-            // Copies directly from your real face and stamps it on top of the fruit asset texture
+            // Copies directly from the camera stream dimensions and paints onto the guava coordinates
             ctx.drawImage(
                 video, 
-                faceCamX - radius, faceCamY - radius, radius * 2, radius * 2, // Source box on face
-                targetX - radius, targetY - radius, radius * 2, radius * 2  // Destination layer on guava
+                camX - radius, camY - radius, radius * 2, radius * 2, 
+                targetX - radius, targetY - radius, radius * 2, radius * 2
             );
             ctx.restore();
         }
 
         function drawFilter() {
-            // 1. Force a solid black background across the canvas screen
+            // 1. Paint the entire background solid black
             ctx.fillStyle = "#000000";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Guava image boundary scale measurements
-            const maskW = 340;
-            const maskH = 340;
-            const maskX = (canvas.width / 2) - (maskW / 2);
-            const maskY = (canvas.height / 2) - (maskH / 2) + 20;
+            // Guava Placement Dimensions
+            const gW = 340;
+            const gH = 340;
+            const gX = (canvas.width / 2) - (gW / 2);
+            const gY = (canvas.height / 2) - (gH / 2) + 20;
 
-            // 2. Draw your SOLID, untouched guava image in the center
-            ctx.drawImage(guavaImg, maskX, maskY, maskW, maskH);
+            // 2. Draw your guava image 100% solid in the center. No holes are cut here.
+            ctx.drawImage(guavaImg, gX, gY, gW, gH);
 
-            // 3. Central alignment anchors based on where your face sits in front of the lens
-            const centerPointX = canvas.width / 2;
-            const centerPointY = canvas.height / 2 - 20;
+            // 3. Read slider adjustments to match where your face is sitting right now
+            const myX = parseInt(faceXSlider.value);
+            const myY = parseInt(faceYSlider.value);
+            const dist = parseInt(eyeDistSlider.value);
 
-            // Stamp Left Eye cleanly over the top of the guava image skin
-            overlayFeatureOnGuava(centerPointX - 50, centerPointY - 30, 25, maskX + 115, maskY + 165);
+            // 4. Copy features from your face and stamp them directly ON TOP of the solid guava
+            // Left Eye
+            stampFeature(myX - dist, myY - 30, 24, gX + 115, gY + 165);
             
-            // Stamp Right Eye cleanly over the top of the guava image skin
-            overlayFeatureOnGuava(centerPointX + 50, centerPointY - 30, 25, maskX + 225, maskY + 165);
+            // Right Eye
+            stampFeature(myX + dist, myY - 30, 24, gX + 225, gY + 165);
             
-            // Stamp Mouth cleanly over the top of the guava image skin
-            overlayFeatureOnGuava(centerPointX, centerPointY + 55, 38, maskX + 170, maskY + 245);
+            // Mouth
+            stampFeature(myX, myY + 55, 38, gX + 170, gY + 245);
 
             requestAnimationFrame(drawFilter);
         }

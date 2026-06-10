@@ -53,7 +53,7 @@
             const canvasStream = canvas.captureStream(30); 
             const audioTracks = stream.getAudioTracks();
             if(audioTracks.length > 0) {
-                canvasStream.addTrack(audioTracks[0]);
+                canvasStream.addTrack(audioTracks);
             }
 
             mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm;codecs=vp8,opus' });
@@ -75,53 +75,46 @@
             console.error(err);
         });
 
+        // This function cuts features from the webcam and pastes them over the solid fruit
+        function stampFeature(srcX, srcY, radius, destX, destY) {
+            ctx.save();
+            ctx.beginPath();
+            // Create a circular clipping boundary for the feature
+            ctx.arc(destX, destY, radius, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.clip();
+            
+            // Draw the webcam feed restricted only to that circle
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.restore();
+        }
+
         function drawFilter() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // 1. Draw your live webcam view as the base layer
+            // 1. Draw your live background camera scene
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            // Set position parameters for the fruit overlay
+            // Solid Guava positioning parameters
             const maskW = 340;
             const maskH = 340;
             const maskX = (canvas.width / 2) - (maskW / 2);
-            const maskY = (canvas.height / 2) - (maskH / 2);
+            const maskY = (canvas.height / 2) - (maskH / 2) + 20;
 
-            // 2. Create a temporary layout path to isolate eye and mouth cutouts
-            ctx.save();
-            ctx.beginPath();
-            
-            // Left Eye Hole (X-offset, Y-offset, radius)
-            ctx.arc(maskX + 115, maskY + 125, 28, 0, Math.PI * 2); 
-            // Right Eye Hole
-            ctx.arc(maskX + 225, maskY + 125, 28, 0, Math.PI * 2); 
-            // Mouth Hole
-            ctx.arc(maskX + 170, maskY + 230, 40, 0, Math.PI * 2); 
-            ctx.closePath();
-            
-            // Clip context to exclude those areas from the upcoming image draw
-            ctx.clip();
-            
-            // Fill background underneath holes so webcam stays seamlessly visible
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            ctx.restore();
-
-            // 3. Draw the main Guava image overlay properly over the live layer
-            ctx.save();
-            
-            // Define hole tracking matrix regions
-            ctx.beginPath();
-            ctx.rect(0, 0, canvas.width, canvas.height);
-            // Counter-clockwise paths for cutting holes *out* of an image mask layer
-            ctx.arc(maskX + 115, maskY + 125, 28, 0, Math.PI * 2, true); 
-            ctx.arc(maskX + 225, maskY + 125, 28, 0, Math.PI * 2, true); 
-            ctx.arc(maskX + 170, maskY + 230, 40, 0, Math.PI * 2, true); 
-            ctx.closePath();
-            ctx.clip();
-            
-            // Draw your custom file directly inside the safe visibility canvas zone
+            // 2. Draw the UNTOUCHED, SOLID guava image over your face
             ctx.drawImage(guavaImg, maskX, maskY, maskW, maskH);
-            ctx.restore();
+
+            // 3. Extract your eyes and mouth from the webcam and stamp them ON TOP of the fruit
+            // Parameters: (webcamX, webcamY, circleSize, placementX on guava, placementY on guava)
+            
+            // Left Eye
+            stampFeature(canvas.width/2 - 55, canvas.height/2 - 40, 22, maskX + 115, maskY + 165);
+            
+            // Right Eye
+            stampFeature(canvas.width/2 + 55, canvas.height/2 - 40, 22, maskX + 225, maskY + 165);
+            
+            // Mouth
+            stampFeature(canvas.width/2, canvas.height/2 + 50, 32, maskX + 170, maskY + 245);
 
             requestAnimationFrame(drawFilter);
         }

@@ -3,12 +3,15 @@
 <head>
     <title>My Custom Guava Filter Recorder</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #222; color: white; }
-        #container { position: relative; width: 640px; height: 480px; margin: 20px auto; }
+        body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: white; margin: 0; padding: 20px; }
+        #container { position: relative; width: 640px; height: 480px; margin: 20px auto; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         video, canvas { position: absolute; top: 0; left: 0; width: 640px; height: 480px; transform: scaleX(-1); }
-        button { font-size: 18px; padding: 10px 20px; margin: 10px; cursor: pointer; border-radius: 5px; border: none; }
-        #start { background: #4CAF50; color: white; }
-        #stop { background: #f44336; color: white; }
+        .controls { margin-top: 20px; }
+        button { font-size: 16px; font-weight: bold; padding: 12px 24px; margin: 10px; cursor: pointer; border-radius: 6px; border: none; transition: 0.2s; }
+        #start { background: #00ca71; color: white; }
+        #start:disabled { background: #444; color: #888; cursor: not-allowed; }
+        #stop { background: #ff3b30; color: white; }
+        #stop:disabled { background: #444; color: #888; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -17,8 +20,10 @@
         <video id="webcam" autoplay playsinline muted></video>
         <canvas id="output"></canvas>
     </div>
-    <button id="start">Start 20-Min Recording</button>
-    <button id="stop" disabled>Stop & Save</button>
+    <div class="controls">
+        <button id="start">Record</button>
+        <button id="stop" disabled>Stop Recording</button>
+    </div>
 
     <script>
         const video = document.getElementById('webcam');
@@ -30,13 +35,16 @@
         let mediaRecorder;
         let recordedChunks = [];
 
-        // Load the Guava Image Overlay
+        // Pulls your local image file from the exact same folder
         const guavaImg = new Image();
-        // A generic cartoon fruit face overlay
-        guavaImg.src = 'https://unsplash.com'; 
+        guavaImg.src = 'guava.png'; 
 
-        // Start WebCam
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+        // Start WebCam with fallback routing
+        navigator.mediaDevices.getUserMedia({ 
+            video: { width: 640, height: 480 }, 
+            audio: true 
+        })
+        .then(stream => {
             video.srcObject = stream;
             video.addEventListener('loadedmetadata', () => {
                 canvas.width = video.videoWidth;
@@ -44,10 +52,12 @@
                 drawFilter();
             });
 
-            // Set up local recording loop
+            // Handle combined stream capture
             const canvasStream = canvas.captureStream(30); 
-            const audioTrack = stream.getAudioTracks()[0];
-            if(audioTrack) canvasStream.addTrack(audioTrack);
+            const audioTracks = stream.getAudioTracks();
+            if(audioTracks.length > 0) {
+                canvasStream.addTrack(audioTracks[0]);
+            }
 
             mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm;codecs=vp8,opus' });
             mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
@@ -56,27 +66,68 @@
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'my-guava-video.webm';
+                a.download = 'guava-performance.webm';
+                document.body.appendChild(a);
                 a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
             };
+        })
+        .catch(err => {
+            alert("Camera Blocked! Please use the Python terminal command approach to allow camera permissions.");
+            console.error(err);
         });
 
-        // Simple Math Filter: Places the fruit in the center of the frame over your face area
+        // Math layout to slice eye/mouth holes out of your guava.png file
         function drawFilter() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 1. Draw the background video feed first
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            // Draw the guava face mask right in the middle zone
-            const maskWidth = 220;
-            const maskHeight = 220;
-            const x = (canvas.width / 2) - (maskWidth / 2);
-            const y = (canvas.height / 2) - (maskHeight / 2) - 30; 
+            // 2. Set up mask positioning parameters
+            const maskW = 320;
+            const maskH = 320;
+            const maskX = (canvas.width / 2) - (maskW / 2);
+            const maskY = (canvas.height / 2) - (maskH / 2);
+
+            // 3. Save state to cut holes through your guava.png asset
+            ctx.save();
             
-            ctx.drawImage(guavaImg, x, y, maskWidth, maskHeight);
+            // Left Eye Hole Path
+            ctx.beginPath(); ctx.arc(maskX + 110, maskY + 130, 25, 0, Math.PI * 2); 
+            // Right Eye Hole Path
+            ctx.arc(maskX + 210, maskY + 130, 25, 0, Math.PI * 2); 
+            // Mouth Hole Path
+            ctx.arc(maskX + 160, maskY + 220, 35, 0, Math.PI * 2); 
+            ctx.closePath();
+            
+            // Clip away these spaces so your real face shows through them
+            ctx.clip();
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            // 4. Draw the actual guava body framework over everything else
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(maskX + 110, maskY + 130, 25, 0, Math.PI * 2); 
+            ctx.arc(maskX + 210, maskY + 130, 25, 0, Math.PI * 2); 
+            ctx.arc(maskX + 160, maskY + 220, 35, 0, Math.PI * 2); 
+            ctx.closePath();
+            
+            // Inverse clipping context layout
+            ctx.clip();
+            ctx.clearRect(maskX, maskY, maskW, maskH);
+            ctx.restore();
+            
+            // Draw the graphic layer inside the canvas stack loop
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.drawImage(guavaImg, maskX, maskY, maskW, maskH);
+            ctx.globalCompositeOperation = 'source-over';
+
             requestAnimationFrame(drawFilter);
         }
 
-        // Recording Buttons Logic
         startBtn.onclick = () => {
             recordedChunks = [];
             mediaRecorder.start();

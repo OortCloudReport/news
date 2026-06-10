@@ -4,8 +4,8 @@
     <title>Guava Filter Studio</title>
     <style>
         body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: white; margin: 0; padding: 20px; }
-        #container { position: relative; width: 640px; height: 480px; margin: 20px auto; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        video, canvas { position: absolute; top: 0; left: 0; width: 640px; height: 480px; }
+        #container { position: relative; width: 640px; height: 480px; margin: 20px auto; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); background: black; }
+        canvas { width: 640px; height: 480px; background: black; }
         .controls { margin-top: 20px; }
         button { font-size: 16px; font-weight: bold; padding: 12px 24px; margin: 10px; cursor: pointer; border-radius: 6px; border: none; transition: 0.2s; }
         #start { background: #00ca71; color: white; }
@@ -17,8 +17,8 @@
 <body>
     <h1>Guava Filter Studio</h1>
     <div id="container">
-        <!-- Keep video feed completely invisible so your room background never shows -->
-        <video id="webcam" autoplay playsinline muted style="display:none;"></video>
+        <!-- Keep video feed active but completely invisible so your room background never displays -->
+        <video id="webcam" autoplay playsinline muted style="position: absolute; width: 1px; height: 1px; opacity: 0.01;"></video>
         <canvas id="output"></canvas>
     </div>
     <div class="controls">
@@ -51,10 +51,11 @@
                 drawFilter();
             });
 
+            // Stream integration tracking loop
             const canvasStream = canvas.captureStream(30); 
             const audioTracks = stream.getAudioTracks();
             if(audioTracks.length > 0) {
-                canvasStream.addTrack(audioTracks);
+                canvasStream.addTrack(audioTracks[0]);
             }
 
             mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm;codecs=vp8,opus' });
@@ -72,55 +73,67 @@
             };
         })
         .catch(err => {
-            console.error("Camera stream error handler:", err);
+            console.error("Camera loading sequence logs:", err);
         });
 
-        // Grabs your features out of the invisible camera feed and stamps them on the canvas
-        function stampWebcamFeature(sourceX, sourceY, radius, targetX, targetY) {
+        // This function extracts your webcam facial details and overlays them safely onto the fruit canvas
+        function overlayFeatureOnGuava(faceCamX, faceCamY, radius, targetX, targetY) {
             ctx.save();
             ctx.beginPath();
             ctx.arc(targetX, targetY, radius, 0, Math.PI * 2);
             ctx.closePath();
             ctx.clip();
             
-            // Draw the precise circle snippet from your webcam onto the guava layer
+            // Copies directly from your real face and stamps it on top of the fruit asset texture
             ctx.drawImage(
                 video, 
-                sourceX - radius, sourceY - radius, radius * 2, radius * 2, // Source box on face
-                targetX - radius, targetY - radius, radius * 2, radius * 2  // Destination box on guava
+                faceCamX - radius, faceCamY - radius, radius * 2, radius * 2, // Source box on face
+                targetX - radius, targetY - radius, radius * 2, radius * 2  // Destination layer on guava
             );
             ctx.restore();
         }
 
         function drawFilter() {
-            // 1. Draw a solid clean black background (hides your room entirely)
+            // 1. Force a solid black background across the canvas screen
             ctx.fillStyle = "#000000";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Guava Image Dimensions
+            // Guava image boundary scale measurements
             const maskW = 340;
             const maskH = 340;
             const maskX = (canvas.width / 2) - (maskW / 2);
             const maskY = (canvas.height / 2) - (maskH / 2) + 20;
 
-            // 2. Render your solid, untouched guava image file
+            // 2. Draw your SOLID, untouched guava image in the center
             ctx.drawImage(guavaImg, maskX, maskY, maskW, maskH);
 
-            // 3. Coordinate Tracking Centers (Based on where you sit in front of the lens)
-            const myFaceX = canvas.width / 2;
-            const myFaceY = canvas.height / 2 - 15;
+            // 3. Central alignment anchors based on where your face sits in front of the lens
+            const centerPointX = canvas.width / 2;
+            const centerPointY = canvas.height / 2 - 20;
 
-            // Stamp Left Eye over the guava body
-            stampWebcamFeature(myFaceX - 45, myFaceY - 30, 24, maskX + 115, maskY + 165);
+            // Stamp Left Eye cleanly over the top of the guava image skin
+            overlayFeatureOnGuava(centerPointX - 50, centerPointY - 30, 25, maskX + 115, maskY + 165);
             
-            // Stamp Right Eye over the guava body
-            stampWebcamFeature(myFaceX + 45, myFaceY - 30, 24, maskX + 225, maskY + 165);
+            // Stamp Right Eye cleanly over the top of the guava image skin
+            overlayFeatureOnGuava(centerPointX + 50, centerPointY - 30, 25, maskX + 225, maskY + 165);
             
-            // Stamp Mouth over the guava body
-            stampWebcamFeature(myFaceX, myFaceY + 55, 36, maskX + 170, maskY + 245);
+            // Stamp Mouth cleanly over the top of the guava image skin
+            overlayFeatureOnGuava(centerPointX, centerPointY + 55, 38, maskX + 170, maskY + 245);
 
             requestAnimationFrame(drawFilter);
         }
+
+        startBtn.onclick = () => {
+            recordedChunks = [];
+            mediaRecorder.start();
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        };
+        stopBtn.onclick = () => {
+            mediaRecorder.stop();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        };
     </script>
 </body>
 </html>

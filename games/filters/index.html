@@ -35,11 +35,9 @@
         let mediaRecorder;
         let recordedChunks = [];
 
-        // Pulls your local image file from the exact same folder
         const guavaImg = new Image();
         guavaImg.src = 'guava.png'; 
 
-        // Start WebCam with fallback routing
         navigator.mediaDevices.getUserMedia({ 
             video: { width: 640, height: 480 }, 
             audio: true 
@@ -52,7 +50,6 @@
                 drawFilter();
             });
 
-            // Handle combined stream capture
             const canvasStream = canvas.captureStream(30); 
             const audioTracks = stream.getAudioTracks();
             if(audioTracks.length > 0) {
@@ -74,71 +71,60 @@
             };
         })
         .catch(err => {
-            alert("Camera Blocked! Please use the Python terminal command approach to allow camera permissions.");
+            alert("Camera Access Error");
             console.error(err);
         });
 
-        // Math layout to slice eye/mouth holes out of your guava.png file
         function drawFilter() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // 1. Draw the background video feed first
+            // 1. Draw your live webcam view as the base layer
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            // 2. Set up mask positioning parameters
-            const maskW = 320;
-            const maskH = 320;
+            // Set position parameters for the fruit overlay
+            const maskW = 340;
+            const maskH = 340;
             const maskX = (canvas.width / 2) - (maskW / 2);
             const maskY = (canvas.height / 2) - (maskH / 2);
 
-            // 3. Save state to cut holes through your guava.png asset
+            // 2. Create a temporary layout path to isolate eye and mouth cutouts
             ctx.save();
+            ctx.beginPath();
             
-            // Left Eye Hole Path
-            ctx.beginPath(); ctx.arc(maskX + 110, maskY + 130, 25, 0, Math.PI * 2); 
-            // Right Eye Hole Path
-            ctx.arc(maskX + 210, maskY + 130, 25, 0, Math.PI * 2); 
-            // Mouth Hole Path
-            ctx.arc(maskX + 160, maskY + 220, 35, 0, Math.PI * 2); 
+            // Left Eye Hole (X-offset, Y-offset, radius)
+            ctx.arc(maskX + 115, maskY + 125, 28, 0, Math.PI * 2); 
+            // Right Eye Hole
+            ctx.arc(maskX + 225, maskY + 125, 28, 0, Math.PI * 2); 
+            // Mouth Hole
+            ctx.arc(maskX + 170, maskY + 230, 40, 0, Math.PI * 2); 
             ctx.closePath();
             
-            // Clip away these spaces so your real face shows through them
+            // Clip context to exclude those areas from the upcoming image draw
             ctx.clip();
+            
+            // Fill background underneath holes so webcam stays seamlessly visible
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             ctx.restore();
 
-            // 4. Draw the actual guava body framework over everything else
+            // 3. Draw the main Guava image overlay properly over the live layer
             ctx.save();
+            
+            // Define hole tracking matrix regions
             ctx.beginPath();
-            ctx.arc(maskX + 110, maskY + 130, 25, 0, Math.PI * 2); 
-            ctx.arc(maskX + 210, maskY + 130, 25, 0, Math.PI * 2); 
-            ctx.arc(maskX + 160, maskY + 220, 35, 0, Math.PI * 2); 
+            ctx.rect(0, 0, canvas.width, canvas.height);
+            // Counter-clockwise paths for cutting holes *out* of an image mask layer
+            ctx.arc(maskX + 115, maskY + 125, 28, 0, Math.PI * 2, true); 
+            ctx.arc(maskX + 225, maskY + 125, 28, 0, Math.PI * 2, true); 
+            ctx.arc(maskX + 170, maskY + 230, 40, 0, Math.PI * 2, true); 
             ctx.closePath();
-            
-            // Inverse clipping context layout
             ctx.clip();
-            ctx.clearRect(maskX, maskY, maskW, maskH);
-            ctx.restore();
             
-            // Draw the graphic layer inside the canvas stack loop
-            ctx.globalCompositeOperation = 'destination-over';
+            // Draw your custom file directly inside the safe visibility canvas zone
             ctx.drawImage(guavaImg, maskX, maskY, maskW, maskH);
-            ctx.globalCompositeOperation = 'source-over';
+            ctx.restore();
 
             requestAnimationFrame(drawFilter);
         }
-
-        startBtn.onclick = () => {
-            recordedChunks = [];
-            mediaRecorder.start();
-            startBtn.disabled = true;
-            stopBtn.disabled = false;
-        };
-        stopBtn.onclick = () => {
-            mediaRecorder.stop();
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-        };
     </script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Guava 3 Filter Studio</title>
+    <title>Guava 4 Filter Studio</title>
     <style>
         body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: white; margin: 0; padding: 20px; }
         #container { position: relative; width: 640px; height: 480px; margin: 20px auto; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); background: black; }
@@ -20,24 +20,23 @@
     <h1>Guava Filter Studio</h1>
     
     <div id="container">
-        <!-- The camera feed runs completely isolated in the background -->
+        <!-- Kept active for browser processing stream data, visually hidden from screen -->
         <video id="webcam" autoplay playsinline muted style="display:none;"></video>
         <canvas id="output"></canvas>
     </div>
 
-    <!-- Sliders let you manually calibrate the tracking to align with your real face perfectly -->
     <div class="sliders">
         <div>
             <label>Face Left/Right</label>
-            <input type="range" id="faceX" min="100" max="540" value="320">
+            <input type="range" id="faceX" min="50" max="590" value="320">
         </div>
         <div>
             <label>Face Up/Down</label>
-            <input type="range" id="faceY" min="100" max="380" value="220">
+            <input type="range" id="faceY" min="50" max="430" value="240">
         </div>
         <div>
             <label>Eye Spacing</label>
-            <input type="range" id="eyeDist" min="30" max="100" value="55">
+            <input type="range" id="eyeDist" min="20" max="120" value="55">
         </div>
     </div>
 
@@ -53,7 +52,6 @@
         const startBtn = document.getElementById('start');
         const stopBtn = document.getElementById('stop');
         
-        // Calibration Slider Selectors
         const faceXSlider = document.getElementById('faceX');
         const faceYSlider = document.getElementById('faceY');
         const eyeDistSlider = document.getElementById('eyeDist');
@@ -97,51 +95,51 @@
             };
         });
 
-        // Pulls a clean slice of your face from the camera and stamps it over the solid image
-        function stampFeature(camX, camY, radius, targetX, targetY) {
+        // Forced direct pixel injection onto the fruit image layer
+        function overlayWebcamCircle(sourceX, sourceY, radius, targetX, targetY) {
             ctx.save();
             ctx.beginPath();
             ctx.arc(targetX, targetY, radius, 0, Math.PI * 2);
             ctx.closePath();
             ctx.clip();
             
-            // Copies directly from the camera stream dimensions and paints onto the guava coordinates
+            // Copies the raw webcam feed and stamps it cleanly on top of the solid canvas
             ctx.drawImage(
                 video, 
-                camX - radius, camY - radius, radius * 2, radius * 2, 
+                sourceX - radius, sourceY - radius, radius * 2, radius * 2, 
                 targetX - radius, targetY - radius, radius * 2, radius * 2
             );
             ctx.restore();
         }
 
         function drawFilter() {
-            // 1. Paint the entire background solid black
+            // LAYER 1: Draw clean, solid black canvas backdrop
             ctx.fillStyle = "#000000";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Guava Placement Dimensions
-            const gW = 340;
-            const gH = 340;
-            const gX = (canvas.width / 2) - (gW / 2);
-            const gY = (canvas.height / 2) - (gH / 2) + 20;
+            // Fruit Dimensions
+            const fruitW = 340;
+            const fruitH = 340;
+            const fruitX = (canvas.width / 2) - (fruitW / 2);
+            const fruitY = (canvas.height / 2) - (fruitH / 2) + 20;
 
-            // 2. Draw your guava image 100% solid in the center. No holes are cut here.
-            ctx.drawImage(guavaImg, gX, gY, gW, gH);
+            // LAYER 2: Draw your guava image 100% solid. No holes or masks touch it.
+            ctx.drawImage(guavaImg, fruitX, fruitY, fruitW, fruitH);
 
-            // 3. Read slider adjustments to match where your face is sitting right now
-            const myX = parseInt(faceXSlider.value);
-            const myY = parseInt(faceYSlider.value);
-            const dist = parseInt(eyeDistSlider.value);
+            // Fetch current manual calibration targets
+            const userX = parseInt(faceXSlider.value);
+            const userY = parseInt(faceYSlider.value);
+            const userEyeGap = parseInt(eyeDistSlider.value);
 
-            // 4. Copy features from your face and stamp them directly ON TOP of the solid guava
-            // Left Eye
-            stampFeature(myX - dist, myY - 30, 24, gX + 115, gY + 165);
+            // LAYER 3: Stamp webcam layers on top of the solid image
+            // Left Eye Stamp
+            overlayWebcamCircle(userX - userEyeGap, userY - 30, 24, fruitX + 115, fruitY + 165);
             
-            // Right Eye
-            stampFeature(myX + dist, myY - 30, 24, gX + 225, gY + 165);
+            // Right Eye Stamp
+            overlayWebcamCircle(userX + userEyeGap, userY - 30, 24, fruitX + 225, fruitY + 165);
             
-            // Mouth
-            stampFeature(myX, myY + 55, 38, gX + 170, gY + 245);
+            // Mouth Stamp
+            overlayWebcamCircle(userX, userY + 55, 38, fruitX + 170, fruitY + 245);
 
             requestAnimationFrame(drawFilter);
         }

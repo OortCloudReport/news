@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Custom Guava Filter Recorder</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #222; color: white; }
+        #container { position: relative; width: 640px; height: 480px; margin: 20px auto; }
+        video, canvas { position: absolute; top: 0; left: 0; width: 640px; height: 480px; transform: scaleX(-1); }
+        button { font-size: 18px; padding: 10px 20px; margin: 10px; cursor: pointer; border-radius: 5px; border: none; }
+        #start { background: #4CAF50; color: white; }
+        #stop { background: #f44336; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Guava Filter Studio</h1>
+    <div id="container">
+        <video id="webcam" autoplay playsinline muted></video>
+        <canvas id="output"></canvas>
+    </div>
+    <button id="start">Start 20-Min Recording</button>
+    <button id="stop" disabled>Stop & Save</button>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('output');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('start');
+        const stopBtn = document.getElementById('stop');
+        
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        // Load the Guava Image Overlay
+        const guavaImg = new Image();
+        // A generic cartoon fruit face overlay
+        guavaImg.src = 'https://unsplash.com'; 
+
+        // Start WebCam
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+            video.srcObject = stream;
+            video.addEventListener('loadedmetadata', () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                drawFilter();
+            });
+
+            // Set up local recording loop
+            const canvasStream = canvas.captureStream(30); 
+            const audioTrack = stream.getAudioTracks()[0];
+            if(audioTrack) canvasStream.addTrack(audioTrack);
+
+            mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm;codecs=vp8,opus' });
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'my-guava-video.webm';
+                a.click();
+            };
+        });
+
+        // Simple Math Filter: Places the fruit in the center of the frame over your face area
+        function drawFilter() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Draw the guava face mask right in the middle zone
+            const maskWidth = 220;
+            const maskHeight = 220;
+            const x = (canvas.width / 2) - (maskWidth / 2);
+            const y = (canvas.height / 2) - (maskHeight / 2) - 30; 
+            
+            ctx.drawImage(guavaImg, x, y, maskWidth, maskHeight);
+            requestAnimationFrame(drawFilter);
+        }
+
+        // Recording Buttons Logic
+        startBtn.onclick = () => {
+            recordedChunks = [];
+            mediaRecorder.start();
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        };
+        stopBtn.onclick = () => {
+            mediaRecorder.stop();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        };
+    </script>
+</body>
+</html>

@@ -5,7 +5,7 @@
     <style>
         body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: white; margin: 0; padding: 20px; }
         #container { position: relative; width: 640px; height: 480px; margin: 20px auto; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        video, canvas { position: absolute; top: 0; left: 0; width: 640px; height: 480px; transform: scaleX(-1); }
+        video, canvas { position: absolute; top: 0; left: 0; width: 640px; height: 480px; }
         .controls { margin-top: 20px; }
         button { font-size: 16px; font-weight: bold; padding: 12px 24px; margin: 10px; cursor: pointer; border-radius: 6px; border: none; transition: 0.2s; }
         #start { background: #00ca71; color: white; }
@@ -17,7 +17,8 @@
 <body>
     <h1>Guava Filter Studio</h1>
     <div id="container">
-        <video id="webcam" autoplay playsinline muted></video>
+        <!-- Hidden video element feeds raw data to the canvas template directly -->
+        <video id="webcam" autoplay playsinline muted style="display:none;"></video>
         <canvas id="output"></canvas>
     </div>
     <div class="controls">
@@ -53,7 +54,7 @@
             const canvasStream = canvas.captureStream(30); 
             const audioTracks = stream.getAudioTracks();
             if(audioTracks.length > 0) {
-                canvasStream.addTrack(audioTracks);
+                canvasStream.addTrack(audioTracks[0]);
             }
 
             mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm;codecs=vp8,opus' });
@@ -71,50 +72,50 @@
             };
         })
         .catch(err => {
-            alert("Camera Access Error");
-            console.error(err);
+            console.error("Camera configuration system status:", err);
         });
 
-        // This function cuts features from the webcam and pastes them over the solid fruit
-        function stampFeature(srcX, srcY, radius, destX, destY) {
+        // Grabs an exact area of the raw video camera and places it on top of the fruit
+        function copyFacialFeature(camX, camY, radius, placementX, placementY) {
             ctx.save();
             ctx.beginPath();
-            // Create a circular clipping boundary for the feature
-            ctx.arc(destX, destY, radius, 0, Math.PI * 2);
+            ctx.arc(placementX, placementY, radius, 0, Math.PI * 2);
             ctx.closePath();
             ctx.clip();
             
-            // Draw the webcam feed restricted only to that circle
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // Map video area directly onto the guava surface coordinates
+            ctx.drawImage(video, camX - radius, camY - radius, radius * 2, radius * 2, placementX - radius, placementY - radius, radius * 2, radius * 2);
             ctx.restore();
         }
 
         function drawFilter() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // 1. Draw your live background camera scene
+            // 1. Draw your live background scene unmodified
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            // Solid Guava positioning parameters
+            // Solid fruit layout matrix settings
             const maskW = 340;
             const maskH = 340;
             const maskX = (canvas.width / 2) - (maskW / 2);
             const maskY = (canvas.height / 2) - (maskH / 2) + 20;
 
-            // 2. Draw the UNTOUCHED, SOLID guava image over your face
+            // 2. Overlay your completely solid guava file over the center
             ctx.drawImage(guavaImg, maskX, maskY, maskW, maskH);
 
-            // 3. Extract your eyes and mouth from the webcam and stamp them ON TOP of the fruit
-            // Parameters: (webcamX, webcamY, circleSize, placementX on guava, placementY on guava)
+            // 3. Extract your features from the canvas feed center and paste them over the guava
+            // Target coordinates adjusted to align perfectly with your facial center
+            const faceCenterX = canvas.width / 2;
+            const faceCenterY = canvas.height / 2 - 15;
+
+            // Paste Left Eye
+            copyFacialFeature(faceCenterX - 45, faceCenterY - 30, 24, maskX + 115, maskY + 165);
             
-            // Left Eye
-            stampFeature(canvas.width/2 - 55, canvas.height/2 - 40, 22, maskX + 115, maskY + 165);
+            // Paste Right Eye
+            copyFacialFeature(faceCenterX + 45, faceCenterY - 30, 24, maskX + 225, maskY + 165);
             
-            // Right Eye
-            stampFeature(canvas.width/2 + 55, canvas.height/2 - 40, 22, maskX + 225, maskY + 165);
-            
-            // Mouth
-            stampFeature(canvas.width/2, canvas.height/2 + 50, 32, maskX + 170, maskY + 245);
+            // Paste Mouth
+            copyFacialFeature(faceCenterX, faceCenterY + 55, 34, maskX + 170, maskY + 245);
 
             requestAnimationFrame(drawFilter);
         }

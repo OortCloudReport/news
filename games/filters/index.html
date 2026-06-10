@@ -1,42 +1,45 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Guava 4 Filter Studio</title>
+    <title>Guava 5 Filter Studio</title>
     <style>
         body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: white; margin: 0; padding: 20px; }
-        #container { position: relative; width: 640px; height: 480px; margin: 20px auto; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); background: black; }
-        canvas { width: 640px; height: 480px; background: black; }
+        .workspace { display: flex; justify-content: center; gap: 20px; align-items: flex-start; margin: 20px auto; max-width: 1100px; }
+        #container { position: relative; width: 640px; height: 480px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); background: black; }
+        canvas { width: 640px; height: 480px; }
+        .sidebar { background: #2a2a2a; padding: 20px; border-radius: 8px; text-align: left; width: 320px; }
+        video { width: 320px; height: 240px; background: #000; border-radius: 4px; margin-bottom: 15px; }
         .controls { margin-top: 20px; }
         button { font-size: 16px; font-weight: bold; padding: 12px 24px; margin: 10px; cursor: pointer; border-radius: 6px; border: none; }
         #start { background: #00ca71; color: white; }
-        #start:disabled { background: #444; color: #888; }
         #stop { background: #ff3b30; color: white; }
-        #stop:disabled { background: #444; color: #888; }
-        .sliders { display: flex; justify-content: center; gap: 20px; margin: 20px auto; max-width: 600px; background: #2a2a2a; padding: 15px; border-radius: 8px; }
-        label { display: block; font-size: 12px; margin-bottom: 5px; }
+        label { display: block; font-size: 12px; margin: 10px 0 5px 0; font-weight: bold; }
+        input[type="range"] { width: 100%; }
     </style>
 </head>
 <body>
     <h1>Guava Filter Studio</h1>
     
-    <div id="container">
-        <!-- Kept active for browser processing stream data, visually hidden from screen -->
-        <video id="webcam" autoplay playsinline muted style="display:none;"></video>
-        <canvas id="output"></canvas>
-    </div>
+    <div class="workspace">
+        <!-- Main Recording Canvas -->
+        <div id="container">
+            <canvas id="output"></canvas>
+        </div>
 
-    <div class="sliders">
-        <div>
-            <label>Face Left/Right</label>
-            <input type="range" id="faceX" min="50" max="590" value="320">
-        </div>
-        <div>
-            <label>Face Up/Down</label>
-            <input type="range" id="faceY" min="50" max="430" value="240">
-        </div>
-        <div>
-            <label>Eye Spacing</label>
-            <input type="range" id="eyeDist" min="20" max="120" value="55">
+        <!-- Calibration Sidebar -->
+        <div class="sidebar">
+            <h3>1. See Your Webcam Here:</h3>
+            <video id="webcam" autoplay playsinline muted></video>
+            
+            <h3>2. Adjust Sliders to Copy Eyes/Mouth:</h3>
+            <label>Face Left / Right</label>
+            <input type="range" id="faceX" min="40" max="600" value="320">
+
+            <label>Face Up / Down</label>
+            <input type="range" id="faceY" min="40" max="440" value="240">
+
+            <label>Eye Spacing (Widen/Narrow)</label>
+            <input type="range" id="eyeDist" min="20" max="100" value="50">
         </div>
     </div>
 
@@ -62,6 +65,7 @@
         const guavaImg = new Image();
         guavaImg.src = 'guava.png'; 
 
+        // Start Webcam Feed
         navigator.mediaDevices.getUserMedia({ 
             video: { width: 640, height: 480 }, 
             audio: true 
@@ -69,16 +73,15 @@
         .then(stream => {
             video.srcObject = stream;
             video.addEventListener('loadedmetadata', () => {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
+                canvas.width = 640;
+                canvas.height = 480;
                 drawFilter();
             });
 
+            // Set up recording output link
             const canvasStream = canvas.captureStream(30); 
             const audioTracks = stream.getAudioTracks();
-            if(audioTracks.length > 0) {
-                canvasStream.addTrack(audioTracks);
-            }
+            if(audioTracks.length > 0) canvasStream.addTrack(audioTracks);
 
             mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm;codecs=vp8,opus' });
             mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
@@ -95,51 +98,35 @@
             };
         });
 
-        // Forced direct pixel injection onto the fruit image layer
-        function overlayWebcamCircle(sourceX, sourceY, radius, targetX, targetY) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(targetX, targetY, radius, 0, Math.PI * 2);
-            ctx.closePath();
-            ctx.clip();
-            
-            // Copies the raw webcam feed and stamps it cleanly on top of the solid canvas
-            ctx.drawImage(
-                video, 
-                sourceX - radius, sourceY - radius, radius * 2, radius * 2, 
-                targetX - radius, targetY - radius, radius * 2, radius * 2
-            );
-            ctx.restore();
-        }
-
         function drawFilter() {
-            // LAYER 1: Draw clean, solid black canvas backdrop
+            // LAYER 1: Draw a completely solid black background block
             ctx.fillStyle = "#000000";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Fruit Dimensions
-            const fruitW = 340;
-            const fruitH = 340;
-            const fruitX = (canvas.width / 2) - (fruitW / 2);
-            const fruitY = (canvas.height / 2) - (fruitH / 2) + 20;
+            // Fixed Guava Placement Box (Guava is drawn 100% solid, untouched)
+            const gW = 340; const gH = 340;
+            const gX = (canvas.width / 2) - (gW / 2);
+            const gY = (canvas.height / 2) - (gH / 2) + 20;
 
-            // LAYER 2: Draw your guava image 100% solid. No holes or masks touch it.
-            ctx.drawImage(guavaImg, fruitX, fruitY, fruitW, fruitH);
+            // LAYER 2: Draw the solid guava image onto the black background
+            ctx.drawImage(guavaImg, gX, gY, gW, gH);
 
-            // Fetch current manual calibration targets
-            const userX = parseInt(faceXSlider.value);
-            const userY = parseInt(faceYSlider.value);
-            const userEyeGap = parseInt(eyeDistSlider.value);
+            // Read your current slider settings
+            const camX = parseInt(faceXSlider.value);
+            const camY = parseInt(faceYSlider.value);
+            const eyeGap = parseInt(eyeDistSlider.value);
 
-            // LAYER 3: Stamp webcam layers on top of the solid image
-            // Left Eye Stamp
-            overlayWebcamCircle(userX - userEyeGap, userY - 30, 24, fruitX + 115, fruitY + 165);
+            // LAYER 3: Pure Copy & Paste square snapshots directly on top of the fruit
+            // No masking, no clipping paths, no hole cutting allowed.
             
-            // Right Eye Stamp
-            overlayWebcamCircle(userX + userEyeGap, userY - 30, 24, fruitX + 225, fruitY + 165);
+            // Copy Left Eye square from your face and stamp onto guava face area
+            ctx.drawImage(video, camX - eyeGap - 20, camY - 20, 40, 40, gX + 95, gY + 145, 40, 40);
             
-            // Mouth Stamp
-            overlayWebcamCircle(userX, userY + 55, 38, fruitX + 170, fruitY + 245);
+            // Copy Right Eye square from your face and stamp onto guava face area
+            ctx.drawImage(video, camX + eyeGap - 20, camY - 20, 40, 40, gX + 205, gY + 145, 40, 40);
+            
+            // Copy Mouth square from your face and stamp onto guava face area
+            ctx.drawImage(video, camX - 30, camY + 40, 60, 45, gX + 140, gY + 225, 60, 45);
 
             requestAnimationFrame(drawFilter);
         }
